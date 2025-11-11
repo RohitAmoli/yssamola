@@ -273,15 +273,42 @@
 
   <!-- NAV -->
   <nav>
-    <a href="#">Home</a>
-    <a href="#about">About Us</a>
-    <a href="#activities">Activities</a>
-    <a href="#live">Live Program</a>
-    <a href="#gallery">Gallery</a>
-    <a href="#join">Join Us</a>
-    <a href="#donate">Support</a>
-    <a href="#contact">Contact</a>
-  </nav>
+ <nav class="navbar">
+  <a href="#">Home</a>
+  <a href="#about">About Us</a>
+  <a href="#activities">Activities</a>
+  <a href="#live">Live Program</a>
+  <a href="#gallery">Gallery</a>
+  <a href="#join">Join Us</a>
+  <a href="#donate">Support</a>
+  <a href="#contact">Contact</a>
+</nav>
+
+<style>
+/* Navigation Bar */
+.navbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #b30000; /* Red tone for banner */
+  padding: 12px 0;
+  flex-wrap: wrap; /* Makes it responsive on smaller screens */
+}
+
+.navbar a {
+  color: white;
+  text-decoration: none;
+  margin: 0 15px;
+  font-weight: bold;
+  font-size: 16px;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.navbar a:hover {
+  color: #ffcc00;
+  transform: scale(1.1);
+}
+</style>
 
   <!-- HERO -->
   <section class="hero">
@@ -402,3 +429,4 @@
 
 </body>
 </html>
+
