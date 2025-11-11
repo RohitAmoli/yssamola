@@ -145,44 +145,57 @@
     }
 
     /* Video thumbnail */
-    .video-thumbnail {
-      position: relative;
-      width: 560px;
-      max-width: 100%;
-      margin: 20px auto;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      cursor: pointer;
-      transition: transform 0.3s ease;
-    }
-    .video-thumbnail:hover {
-      transform: scale(1.03);
-    }
-    .video-thumbnail img {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-    .play-button {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 60px;
-      color: white;
-      background: rgba(0, 0, 0, 0.6);
-      border-radius: 50%;
-      width: 90px;
-      height: 90px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.3s ease;
-    }
-    .video-thumbnail:hover .play-button {
-      background: rgba(255, 0, 0, 0.8);
-    }
+    <style>
+.video-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+
+.video-thumbnail {
+  position: relative;
+  width: 320px;
+  max-width: 90%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.video-thumbnail:hover {
+  transform: scale(1.03);
+}
+
+.video-thumbnail img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.play-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 50px;
+  color: white;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+}
+
+.video-thumbnail:hover .play-button {
+  background: rgba(255, 0, 0, 0.8);
+}
+</style>
+
 
     /* Donate Section */
     .donate-section {
@@ -361,18 +374,20 @@
     <h2>Watch Our Live Programs</h2>
     <p>Stay connected! Watch our events, awareness campaigns, and cultural programs live on YouTube or Facebook.</p>
 
-    <div class="video-thumbnail">
-      <a href="https://www.youtube.com/watch?v=3aaXkYOrSFw" target="_blank">
-        <img src="https://img.youtube.com/vi/3aaXkYOrSFw/hqdefault.jpg" alt="Watch Live on YouTube">
-        <div class="play-button">▶</div>
-      </a>
-    </div>
+   <div class="video-gallery">
+  <div class="video-thumbnail">
+    <a href="https://www.youtube.com/watch?v=3aaXkYOrSFw" target="_blank">
+      <img src="https://img.youtube.com/vi/3aaXkYOrSFw/hqdefault.jpg" alt="Watch Live on YouTube">
+      <div class="play-button">▶</div>
+    </a>
+  </div>
 
-<div class="video-thumbnail">
-  <a href="https://www.youtube.com/watch?v=D1tk3CzPFVQ" target="_blank">
-    <img src="https://img.youtube.com/vi/D1tk3CzPFVQ/hqdefault.jpg" alt="Watch Live on YouTube">
-    <div class="play-button">▶</div>
-  </a>
+  <div class="video-thumbnail">
+    <a href="https://www.youtube.com/watch?v=D1tk3CzPFVQ" target="_blank">
+      <img src="https://img.youtube.com/vi/D1tk3CzPFVQ/hqdefault.jpg" alt="Watch Live on YouTube">
+      <div class="play-button">▶</div>
+    </a>
+  </div>
 </div>
 
 
@@ -416,3 +431,4 @@
 
 </body>
 </html>
+
