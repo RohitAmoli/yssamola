@@ -275,7 +275,7 @@
 
 
 <nav class="navbar">
-  <a href="#Home">Home</a>
+  <a href="#home">Home</a>
   <a href="#about">About Us</a>
   <a href="#activities">Activities</a>
   <a href="#live">Live Program</a>
@@ -288,19 +288,17 @@
 <style>
 .navbar {
   display: flex;
-  justify-content: center;
+  justify-content: space-around;
   align-items: center;
+  flex-wrap: wrap;
   background-color: #b30000;
   padding: 10px 5px;
-  overflow-x: auto;      /* allows horizontal scroll if space runs out */
-  white-space: nowrap;   /* prevents wrapping to next line */
 }
 
 .navbar a {
-  display: inline-block;
   color: white;
   text-decoration: none;
-  margin: 0 12px;
+  margin: 5px 8px;
   font-weight: 600;
   font-size: 15px;
   transition: color 0.3s ease, transform 0.3s ease;
@@ -308,9 +306,25 @@
 
 .navbar a:hover {
   color: #ffcc00;
-  transform: scale(1.1);
+  transform: scale(1.05);
+}
+
+/* Mobile Optimization */
+@media (max-width: 600px) {
+  .navbar {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .navbar::-webkit-scrollbar {
+    display: none; /* hide scrollbar for cleaner look */
+  }
 }
 </style>
+
 
 
   <!-- HERO -->
@@ -434,6 +448,7 @@
 
 </body>
 </html>
+
 
 
 
