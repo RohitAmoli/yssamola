@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Amola Yuva Shakti Mandal Samiti</title>
+
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -28,15 +29,15 @@
       align-items: center;
       justify-content: center;
       flex-wrap: wrap;
-      text-align: left;
+      text-align: center;
       padding: 0 15px;
     }
 
     .header-center img {
-      width: 130px;
+      width: 120px;
       height: auto;
       border-radius: 50%;
-      margin-right: 25px;
+      margin-bottom: 10px;
       background: #f8f8f6;
       padding: 5px;
     }
@@ -44,12 +45,12 @@
     .header-center .text h1 {
       color: #d35400;
       margin: 0;
-      font-size: 2em;
+      font-size: 1.8em;
     }
 
     .header-center .text p {
       color: #555;
-      font-size: 1.1em;
+      font-size: 1em;
       margin: 5px 0 0;
     }
 
@@ -58,7 +59,6 @@
       background: #2b7a0b;
       text-align: center;
       padding: 10px 0;
-      flex-wrap: wrap;
     }
     nav a {
       color: white;
@@ -77,16 +77,16 @@
       background: url('village.jpg') center/cover no-repeat;
       color: white;
       text-align: center;
-      padding: 100px 20px;
+      padding: 80px 20px;
       background-color: rgba(0, 0, 0, 0.4);
       background-blend-mode: darken;
     }
     .hero h1 {
-      font-size: 2.5em;
+      font-size: 2em;
       margin-bottom: 10px;
     }
     .hero p {
-      font-size: 1.2em;
+      font-size: 1.1em;
       margin-bottom: 20px;
     }
     .hero button {
@@ -100,7 +100,7 @@
 
     /* Section Base */
     .section {
-      padding: 50px 20px;
+      padding: 40px 20px;
       max-width: 1000px;
       margin: auto;
     }
@@ -113,7 +113,7 @@
     /* About Section Photos */
     .about-gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 15px;
       margin-top: 25px;
     }
@@ -125,6 +125,12 @@
     }
     .about-gallery img:hover {
       transform: scale(1.05);
+    }
+    .about-member p {
+      margin-top: 8px;
+      font-size: 0.95em;
+      text-align: center;
+      color: #333;
     }
 
     /* Cards */
@@ -144,58 +150,55 @@
       color: #1f5d07;
     }
 
-    /* Video thumbnail */
-    <style>
-.video-gallery {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
-}
+    /* Video Gallery */
+    .video-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      justify-items: center;
+    }
 
-.video-thumbnail {
-  position: relative;
-  width: 320px;
-  max-width: 90%;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
+    .video-thumbnail {
+      position: relative;
+      width: 100%;
+      max-width: 350px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
 
-.video-thumbnail:hover {
-  transform: scale(1.03);
-}
+    .video-thumbnail:hover {
+      transform: scale(1.03);
+    }
 
-.video-thumbnail img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
+    .video-thumbnail img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
 
-.play-button {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 50px;
-  color: white;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 50%;
-  width: 70px;
-  height: 70px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.3s ease;
-}
+    .play-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 50px;
+      color: white;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 50%;
+      width: 70px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s ease;
+    }
 
-.video-thumbnail:hover .play-button {
-  background: rgba(255, 0, 0, 0.8);
-}
-
-
+    .video-thumbnail:hover .play-button {
+      background: rgba(255, 0, 0, 0.8);
+    }
 
     /* Donate Section */
     .donate-section {
@@ -217,6 +220,7 @@
       border-radius: 5px;
       text-decoration: none;
       display: inline-block;
+      margin-top: 10px;
     }
     .btn:hover {
       background: #256307;
@@ -232,58 +236,28 @@
       font-size: 0.9em;
     }
 
-    /* Responsive Styles */
-    @media (max-width: 768px) {
-      .header-center {
-        flex-direction: column;
-        text-align: center;
-      }
-      .header-center img {
-        margin: 0 0 10px 0;
-        width: 120px;
-      }
-      .header-center .text h1 {
-        font-size: 1.6em;
-      }
+    /* Responsive */
+    @media (max-width: 600px) {
       .hero {
-        padding: 60px 15px;
+        padding: 50px 15px;
       }
       .hero h1 {
-        font-size: 1.8em;
+        font-size: 1.6em;
       }
       .hero p {
-        font-size: 1em;
+        font-size: 0.95em;
       }
-    }
-
-    @media (max-width: 480px) {
+      .header-center img {
+        width: 100px;
+      }
       nav a {
         display: block;
         margin: 8px 0;
       }
-      .hero {
-        padding: 40px 10px;
-      }
-      .hero h1 {
-        font-size: 1.5em;
-      }
-      .hero p {
-        font-size: 0.9em;
-      }
-      .section {
-        padding: 30px 15px;
-      }
-      .about-gallery {
-        grid-template-columns: 1fr 1fr;
-      }
-      .video-thumbnail .play-button {
-        font-size: 40px;
-        width: 70px;
-        height: 70px;
-      }
     }
   </style>
 </head>
+
 <body>
 
   <!-- HEADER -->
@@ -297,7 +271,7 @@
     </div>
   </header>
 
-  <!-- NAVIGATION -->
+  <!-- NAV -->
   <nav>
     <a href="#">Home</a>
     <a href="#about">About Us</a>
@@ -325,23 +299,23 @@
     <div class="about-gallery">
       <div class="about-member">
         <img src="about1.jpg" alt="President">
-        <strong><p>श्री धर्मानंद<br>अमोली, अध्यक्ष</p></strong>
+        <p><strong>श्री धर्मानंद<br>अमोली, अध्यक्ष</strong></p>
       </div>
       <div class="about-member">
         <img src="about2.jpg" alt="Vice President">
-        <strong><p>श्री सुंदरमोहन<br>अमोली, उपाध्यक्ष</p></strong>
+        <p><strong>श्री सुंदरमोहन<br>अमोली, उपाध्यक्ष</strong></p>
       </div>
       <div class="about-member">
         <img src="about3.jpg" alt="Secretary">
-        <strong><p>श्री नरेश<br>अमोली, सचिव</p></strong>
+        <p><strong>श्री नरेश<br>अमोली, सचिव</strong></p>
       </div>
       <div class="about-member">
         <img src="about4.jpg" alt="Treasurer">
-        <strong><p>श्री सूर्य प्रकाश<br>अमोली, कोषाध्यक्ष</p></strong>
+        <p><strong>श्री सूर्य प्रकाश<br>अमोली, कोषाध्यक्ष</strong></p>
       </div>
       <div class="about-member">
         <img src="about5.jpg" alt="Coordinator">
-        <strong><p>श्री संदीप<br>अमोली, संयोजक</p></strong>
+        <p><strong>श्री संदीप<br>अमोली, संयोजक</strong></p>
       </div>
     </div>
   </section>
@@ -374,26 +348,23 @@
     <h2>Watch Our Live Programs</h2>
     <p>Stay connected! Watch our events, awareness campaigns, and cultural programs live on YouTube or Facebook.</p>
 
-   <div class="video-gallery">
-  <div class="video-thumbnail">
-    <a href="https://www.youtube.com/watch?v=3aaXkYOrSFw" target="_blank">
-      <img src="https://img.youtube.com/vi/3aaXkYOrSFw/hqdefault.jpg" alt="Watch Live on YouTube">
-      <div class="play-button">▶</div>
-    </a>
-  </div>
-
-  <div class="video-thumbnail">
-    <a href="https://www.youtube.com/watch?v=D1tk3CzPFVQ" target="_blank">
-      <img src="https://img.youtube.com/vi/D1tk3CzPFVQ/hqdefault.jpg" alt="Watch Live on YouTube">
-      <div class="play-button">▶</div>
-    </a>
-  </div>
-</div>
-
-
+    <div class="video-gallery">
+      <div class="video-thumbnail">
+        <a href="https://www.youtube.com/watch?v=3aaXkYOrSFw" target="_blank">
+          <img src="https://img.youtube.com/vi/3aaXkYOrSFw/hqdefault.jpg" alt="Watch Live on YouTube">
+          <div class="play-button">▶</div>
+        </a>
+      </div>
+      <div class="video-thumbnail">
+        <a href="https://www.youtube.com/watch?v=D1tk3CzPFVQ" target="_blank">
+          <img src="https://img.youtube.com/vi/D1tk3CzPFVQ/hqdefault.jpg" alt="Watch Live on YouTube">
+          <div class="play-button">▶</div>
+        </a>
+      </div>
+    </div>
   </section>
 
-  <!-- DONATION -->
+  <!-- DONATE -->
   <section id="donate" class="section donate-section">
     <h2>Support Our Mission</h2>
     <p>Your contribution helps us continue our education, environment, and employment initiatives.</p>
@@ -403,7 +374,7 @@
     <a href="upi://pay?pa=sangthanname@upi&pn=Village+Youth+Sangthan&cu=INR" class="btn">Donate via UPI</a>
   </section>
 
-  <!-- JOIN US -->
+  <!-- JOIN -->
   <section id="join" class="section">
     <h2>Join the Samiti</h2>
     <p>Be a part of Amola’s growth story. Join us as a volunteer or member today!</p>
@@ -431,6 +402,3 @@
 
 </body>
 </html>
-
-
-
