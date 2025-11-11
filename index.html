@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amola Yuva Shakti Mandal Samiti</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background: #fdfdfd;
+      color: #333;
+    }
+
+    /* Header */
+    header {
+      background: #f8f8f6; /* Match logo background */
+      border-bottom: 4px solid #f57c00;
+      padding: 20px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .header-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      text-align: left;
+    }
+
+    .header-center img {
+      width: 130px;
+      height: auto;
+      border-radius: 50%;
+      margin-right: 25px;
+      background: #f8f8f6;
+      padding: 5px;
+    }
+
+    .header-center .text h1 {
+      color: #d35400;
+      margin: 0;
+      font-size: 2em;
+    }
+
+    .header-center .text p {
+      color: #555;
+      font-size: 1.1em;
+      margin: 5px 0 0;
+    }
+
+    /* Navigation */
+    nav {
+      background: #2b7a0b;
+      text-align: center;
+      padding: 10px 0;
+    }
+    nav a {
+      color: white;
+      margin: 0 15px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: url('village.jpg') center/cover no-repeat;
+      color: white;
+      text-align: center;
+      padding: 100px 20px;
+      background-color: rgba(0, 0, 0, 0.4);
+      background-blend-mode: darken;
+    }
+    .hero h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+    .hero p {
+      font-size: 1.2em;
+      margin-bottom: 20px;
+    }
+    .hero button {
+      background: #fbc02d;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1em;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    /* Section Base */
+    .section {
+      padding: 50px 20px;
+      max-width: 1000px;
+      margin: auto;
+    }
+    .section h2 {
+      color: #2b7a0b;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* About Section Photos */
+    .about-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      margin-top: 25px;
+    }
+    .about-gallery img {
+      width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.3s ease;
+    }
+    .about-gallery img:hover {
+      transform: scale(1.05);
+    }
+
+    /* Cards */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      text-align: center;
+    }
+    .card h3 {
+      color: #1f5d07;
+    }
+
+    /* Live */
+    iframe {
+      display: block;
+      margin: 20px auto;
+      border-radius: 10px;
+      max-width: 100%;
+    }
+
+    /* Donate Section */
+    .donate-section {
+      text-align: center;
+      background: #f1f8e9;
+      padding: 40px 20px;
+      border-radius: 10px;
+    }
+    .donate-section img {
+      width: 160px;
+      margin-top: 10px;
+    }
+
+    /* Buttons */
+    .btn {
+      background: #2b7a0b;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 5px;
+      text-decoration: none;
+    }
+    .btn:hover {
+      background: #256307;
+    }
+
+    /* Footer */
+    footer {
+      background: #1f5d07;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      margin-top: 40px;
+      font-size: 0.9em;
+    }
+
+    /* Responsive header */
+    @media (max-width: 768px) {
+      .header-center {
+        flex-direction: column;
+        text-align: center;
+      }
+      .header-center img {
+        margin: 0 0 10px 0;
+        width: 150px;
+      }
+      .header-center .text h1 {
+        font-size: 1.7em;
+      }
+      .header-center .text p {
+        font-size: 1em;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-center">
+      <img src="IMG-20250911-WA0006.jpg" alt="Village Youth Sangthan Logo">
+      <div class="text">
+        <h1>Amola Yuva Shakti Mandal Samiti</h1>
+        <p>Empowering Our Village Through Unity, Education & Progress</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION -->
+  <nav>
+    <a href="#">Home</a>
+    <a href="#about">About Us</a>
+    <a href="#activities">Activities</a>
+    <a href="#live">Live Program</a>
+    <a href="#gallery">Gallery</a>
+    <a href="#join">Join Us</a>
+    <a href="#donate">Support</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <!-- HERO SECTION -->
+  <section class="hero">
+    <h1>“हमारा गांव, हमारी जिम्मेदारी”</h1>
+    <p>Let us work together to build a stronger and progressive Village.</p>
+    <button onclick="window.location='#join'">Join Us</button>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="section">
+    <h2>About Us</h2>
+    <p>
+      <strong>Amola Yuva Shakti Mandal Samiti</strong>, अमोला गाँव के युवाओं द्वारा संचालित एक सामुदायिक पहल है। 
+    हमारा उद्देश्य शिक्षा, सांस्कृतिक विकास और स्व-रोजगार के अवसरों के माध्यम से हमारे लोगों की समग्र भलाई में सुधार करना है।.
+    </p>
+
+    <div class="about-gallery">
+      <div class="about-member">
+        <img src="about1.jpg" alt="President">
+        <strong><p>श्री धर्मानंद अमोली ,<br>अध्यक्ष</p></strong>
+      </div>
+      <div class="about-member">
+        <img src="about2.jpg" alt="Vice President">
+        <strong><p>श्री सुंदरमोहन अमोली, <br>उपाध्यक्ष</p></strong>
+      </div>
+      <div class="about-member">
+        <img src="about3.jpg" alt="Secretary">
+      <strong><p>श्री नरेश अमोली,<br> सचिव</p></strong>
+      </div>
+      <div class="about-member">
+        <img src="about4.jpg" alt="Treasurer">
+        <strong><p>श्री सूर्य प्रकाश ,<br> कोषाध्यक्ष</p></strong>
+      </div>
+      <div class="about-member">
+        <img src="about5.jpg" alt="Coordinator">
+        <strong><p>श्री संदीप अमोली, <br>संयोजक</p></strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACTIVITIES -->
+  <section id="activities" class="section">
+    <h2>Our Key Initiatives</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>💧 Water Conservation</h3>
+        <p>Rainwater harvesting, pond rejuvenation, and clean water awareness.</p>
+      </div>
+      <div class="card">
+        <h3>📚 Education</h3>
+        <p>Study support, digital literacy, and skill-based learning programs.</p>
+      </div>
+      <div class="card">
+        <h3>💼 Self Employment</h3>
+        <p>Encouraging entrepreneurship and providing vocational guidance.</p>
+      </div>
+      <div class="card">
+        <h3>🎭 Cultural Programs</h3>
+        <p>Organizing sports, festivals, and traditional events to unite the community.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE PROGRAMS -->
+  <section id="live" class="section">
+  <h2>Watch Our Live Programs</h2>
+  <p>Stay connected! Watch our events, awareness campaigns, and cultural programs live on YouTube or Facebook.</p>
+
+  <div class="video-thumbnail">
+    <a href="https://www.youtube.com/watch?v=3aaXkYOrSFw" target="_blank">
+      <img src="https://img.youtube.com/vi/3aaXkYOrSFw/hqdefault.jpg" alt="Watch Live on YouTube">
+      <div class="play-button">▶</div>
+    </a>
+  </div>
+</section>
+
+<style>
+.video-thumbnail {
+  position: relative;
+  width: 560px;
+  max-width: 90%;
+  margin: 20px auto;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.video-thumbnail:hover {
+  transform: scale(1.03);
+}
+
+.video-thumbnail img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.play-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 60px;
+  color: white;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+}
+
+.video-thumbnail:hover .play-button {
+  background: rgba(255, 0, 0, 0.8);
+}
+</style>
+
+  <!-- DONATION -->
+  <section id="donate" class="section donate-section">
+    <h2>Support Our Mission</h2>
+    <p>Your contribution helps us continue our education, environment, and employment initiatives.</p>
+    <img src="qr-code.png" alt="UPI QR Code" />
+    <p><strong>UPI ID:</strong> amolayuvashaktimandalsamiti@upi</p>
+    <p><strong>Bank:</strong> ABC Bank, A/C No. XXXXXXXX1234, IFSC: ABCD0001234</p>
+    <a href="upi://pay?pa=sangthanname@upi&pn=Village+Youth+Sangthan&cu=INR" class="btn">Donate via UPI</a>
+  </section>
+
+  <!-- JOIN US -->
+  <section id="join" class="section">
+    <h2>Join the Samiti</h2>
+    <p>Be a part of Amola’s growth story. Join us as a volunteer or member today!</p>
+    <a href="https://forms.gle/YOUR_GOOGLE_FORM_LINK" class="btn">Join Us</a>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="section">
+    <h2>Contact Us</h2>
+    <p>📍 Amola Village, Pauri Garhwal, Uttarakhand</p>
+    <p>📧 Email: contact@amolayuvashaktimandalsamiti.org</p>
+    <p>☎️ Phone: +91 XXXXX XXXXX</p>
+    <p>🌐 Follow us:
+      <a href="https://facebook.com/YOURPAGE" style="color:#2b7a0b;">Facebook</a> |
+      <a href="https://youtube.com/YOURCHANNEL" style="color:#2b7a0b;">YouTube</a> |
+      <a href="https://instagram.com/YOURPAGE" style="color:#2b7a0b;">Instagram</a>
+    </p>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    © 2025 Amola Yuva Shakti Mandal Samiti | All Rights Reserved<br>
+    Designed & Managed by Rohit Amoli & Village Youth Team
+  </footer>
+
+</body>
+</html>
