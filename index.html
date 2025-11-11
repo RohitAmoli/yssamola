@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,7 +14,7 @@
 
     /* Header */
     header {
-      background: #f8f8f6; /* Match logo background */
+      background: #f8f8f6;
       border-bottom: 4px solid #f57c00;
       padding: 20px 0;
       display: flex;
@@ -29,6 +29,7 @@
       justify-content: center;
       flex-wrap: wrap;
       text-align: left;
+      padding: 0 15px;
     }
 
     .header-center img {
@@ -57,12 +58,15 @@
       background: #2b7a0b;
       text-align: center;
       padding: 10px 0;
+      flex-wrap: wrap;
     }
     nav a {
       color: white;
-      margin: 0 15px;
+      margin: 0 10px;
       text-decoration: none;
       font-weight: 600;
+      display: inline-block;
+      padding: 6px 5px;
     }
     nav a:hover {
       text-decoration: underline;
@@ -140,12 +144,44 @@
       color: #1f5d07;
     }
 
-    /* Live */
-    iframe {
-      display: block;
-      margin: 20px auto;
-      border-radius: 10px;
+    /* Video thumbnail */
+    .video-thumbnail {
+      position: relative;
+      width: 560px;
       max-width: 100%;
+      margin: 20px auto;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .video-thumbnail:hover {
+      transform: scale(1.03);
+    }
+    .video-thumbnail img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .play-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 60px;
+      color: white;
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 50%;
+      width: 90px;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s ease;
+    }
+    .video-thumbnail:hover .play-button {
+      background: rgba(255, 0, 0, 0.8);
     }
 
     /* Donate Section */
@@ -167,6 +203,7 @@
       padding: 10px 15px;
       border-radius: 5px;
       text-decoration: none;
+      display: inline-block;
     }
     .btn:hover {
       background: #256307;
@@ -182,7 +219,7 @@
       font-size: 0.9em;
     }
 
-    /* Responsive header */
+    /* Responsive Styles */
     @media (max-width: 768px) {
       .header-center {
         flex-direction: column;
@@ -190,13 +227,46 @@
       }
       .header-center img {
         margin: 0 0 10px 0;
-        width: 150px;
+        width: 120px;
       }
       .header-center .text h1 {
-        font-size: 1.7em;
+        font-size: 1.6em;
       }
-      .header-center .text p {
+      .hero {
+        padding: 60px 15px;
+      }
+      .hero h1 {
+        font-size: 1.8em;
+      }
+      .hero p {
         font-size: 1em;
+      }
+    }
+
+    @media (max-width: 480px) {
+      nav a {
+        display: block;
+        margin: 8px 0;
+      }
+      .hero {
+        padding: 40px 10px;
+      }
+      .hero h1 {
+        font-size: 1.5em;
+      }
+      .hero p {
+        font-size: 0.9em;
+      }
+      .section {
+        padding: 30px 15px;
+      }
+      .about-gallery {
+        grid-template-columns: 1fr 1fr;
+      }
+      .video-thumbnail .play-button {
+        font-size: 40px;
+        width: 70px;
+        height: 70px;
       }
     }
   </style>
@@ -226,7 +296,7 @@
     <a href="#contact">Contact</a>
   </nav>
 
-  <!-- HERO SECTION -->
+  <!-- HERO -->
   <section class="hero">
     <h1>“हमारा गांव, हमारी जिम्मेदारी”</h1>
     <p>Let us work together to build a stronger and progressive Village.</p>
@@ -236,31 +306,29 @@
   <!-- ABOUT -->
   <section id="about" class="section">
     <h2>About Us</h2>
-    <p>
-      <strong>Amola Yuva Shakti Mandal Samiti</strong>, अमोला गाँव के युवाओं द्वारा संचालित एक सामुदायिक पहल है। 
-    हमारा उद्देश्य शिक्षा, सांस्कृतिक विकास और स्व-रोजगार के अवसरों के माध्यम से हमारे लोगों की समग्र भलाई में सुधार करना है।.
-    </p>
+    <p><strong>Amola Yuva Shakti Mandal Samiti</strong>, अमोला गाँव के युवाओं द्वारा संचालित एक सामुदायिक पहल है।
+    हमारा उद्देश्य शिक्षा, सांस्कृतिक विकास और स्व-रोजगार के अवसरों के माध्यम से हमारे लोगों की समग्र भलाई में सुधार करना है।</p>
 
     <div class="about-gallery">
       <div class="about-member">
         <img src="about1.jpg" alt="President">
-        <strong><p>श्री धर्मानंद अमोली ,<br>अध्यक्ष</p></strong>
+        <strong><p>श्री धर्मानंद<br>अमोली, अध्यक्ष</p></strong>
       </div>
       <div class="about-member">
         <img src="about2.jpg" alt="Vice President">
-        <strong><p>श्री सुंदरमोहन अमोली, <br>उपाध्यक्ष</p></strong>
+        <strong><p>श्री सुंदरमोहन<br>अमोली, उपाध्यक्ष</p></strong>
       </div>
       <div class="about-member">
         <img src="about3.jpg" alt="Secretary">
-      <strong><p>श्री नरेश अमोली,<br> सचिव</p></strong>
+        <strong><p>श्री नरेश<br>अमोली, सचिव</p></strong>
       </div>
       <div class="about-member">
         <img src="about4.jpg" alt="Treasurer">
-        <strong><p>श्री सूर्य प्रकाश ,<br> कोषाध्यक्ष</p></strong>
+        <strong><p>श्री सूर्य प्रकाश<br>अमोली, कोषाध्यक्ष</p></strong>
       </div>
       <div class="about-member">
         <img src="about5.jpg" alt="Coordinator">
-        <strong><p>श्री संदीप अमोली, <br>संयोजक</p></strong>
+        <strong><p>श्री संदीप<br>अमोली, संयोजक</p></strong>
       </div>
     </div>
   </section>
@@ -288,63 +356,18 @@
     </div>
   </section>
 
-  <!-- LIVE PROGRAMS -->
+  <!-- LIVE -->
   <section id="live" class="section">
-  <h2>Watch Our Live Programs</h2>
-  <p>Stay connected! Watch our events, awareness campaigns, and cultural programs live on YouTube or Facebook.</p>
+    <h2>Watch Our Live Programs</h2>
+    <p>Stay connected! Watch our events, awareness campaigns, and cultural programs live on YouTube or Facebook.</p>
 
-  <div class="video-thumbnail">
-    <a href="https://www.youtube.com/watch?v=3aaXkYOrSFw" target="_blank">
-      <img src="https://img.youtube.com/vi/3aaXkYOrSFw/hqdefault.jpg" alt="Watch Live on YouTube">
-      <div class="play-button">▶</div>
-    </a>
-  </div>
-</section>
-
-<style>
-.video-thumbnail {
-  position: relative;
-  width: 560px;
-  max-width: 90%;
-  margin: 20px auto;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-.video-thumbnail:hover {
-  transform: scale(1.03);
-}
-
-.video-thumbnail img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-.play-button {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 60px;
-  color: white;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 50%;
-  width: 90px;
-  height: 90px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.3s ease;
-}
-
-.video-thumbnail:hover .play-button {
-  background: rgba(255, 0, 0, 0.8);
-}
-</style>
+    <div class="video-thumbnail">
+      <a href="https://www.youtube.com/watch?v=3aaXkYOrSFw" target="_blank">
+        <img src="https://img.youtube.com/vi/3aaXkYOrSFw/hqdefault.jpg" alt="Watch Live on YouTube">
+        <div class="play-button">▶</div>
+      </a>
+    </div>
+  </section>
 
   <!-- DONATION -->
   <section id="donate" class="section donate-section">
