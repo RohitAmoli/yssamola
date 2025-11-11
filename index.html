@@ -272,8 +272,9 @@
   </header>
 
   <!-- NAV -->
-  <nav>
- <nav class="navbar">
+
+
+<nav class="navbar">
   <a href="#">Home</a>
   <a href="#about">About Us</a>
   <a href="#activities">Activities</a>
@@ -285,22 +286,23 @@
 </nav>
 
 <style>
-/* Navigation Bar */
 .navbar {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #b30000; /* Red tone for banner */
-  padding: 12px 0;
-  flex-wrap: wrap; /* Makes it responsive on smaller screens */
+  background-color: #b30000;
+  padding: 10px 5px;
+  overflow-x: auto;      /* allows horizontal scroll if space runs out */
+  white-space: nowrap;   /* prevents wrapping to next line */
 }
 
 .navbar a {
+  display: inline-block;
   color: white;
   text-decoration: none;
-  margin: 0 15px;
-  font-weight: bold;
-  font-size: 16px;
+  margin: 0 12px;
+  font-weight: 600;
+  font-size: 15px;
   transition: color 0.3s ease, transform 0.3s ease;
 }
 
@@ -309,6 +311,7 @@
   transform: scale(1.1);
 }
 </style>
+
 
   <!-- HERO -->
   <section class="hero">
@@ -429,4 +432,5 @@
 
 </body>
 </html>
+
 
