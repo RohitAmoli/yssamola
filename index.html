@@ -3,256 +3,492 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Amola Yuva Shakti Mandal Samiti</title>
+
+  <title>Join Us - Amola Yuva Shakti Mandal Samiti</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* =========================
+       GLOBAL
+    ========================== */
+
+    * {
       margin: 0;
-      background: #fdfdfd;
-      color: #333;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    /* Header */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f7f9fc;
+      color: #263238;
+      line-height: 1.6;
+    }
+
+    /* =========================
+       HEADER
+    ========================== */
+
     header {
-      background: #f8f8f6;
-      border-bottom: 4px solid #f57c00;
-      padding: 20px 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      position: relative;
+      background:
+        linear-gradient(
+          rgba(255, 255, 255, 0.88),
+          rgba(255, 255, 255, 0.92)
+        ),
+        url('header-bg1.png') center/cover no-repeat;
+
+      padding: 58px 20px;
+      text-align: center;
+      border-bottom: 1px solid #e7edf4;
     }
 
     .header-center {
+      max-width: 900px;
+      margin: auto;
+
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-      text-align: center;
-      padding: 0 15px;
+      gap: 18px;
     }
 
     .header-center img {
-      width: 120px;
-      height: auto;
+      width: 115px;
+      height: 115px;
+
+      object-fit: cover;
       border-radius: 50%;
-      margin-bottom: 10px;
-      background: #f8f8f6;
-      padding: 5px;
+
+      border: 5px solid #ffffff;
+
+      box-shadow:
+        0 8px 30px rgba(38, 83, 120, 0.15),
+        0 0 0 1px #dfe8f1;
+
+      transition: transform 0.3s ease;
     }
 
-    .header-center .text h1 {
-      color: #d35400;
-      margin: 0;
-      font-size: 1.8em;
+    .header-center img:hover {
+      transform: translateY(-4px);
     }
 
-    .header-center .text p {
-      color: #555;
-      font-size: 1em;
-      margin: 5px 0 0;
-    }
+    .header-center h1 {
+      font-family: 'Poppins', sans-serif;
+      color: #173b5f;
 
-    /* Navigation */
-    nav {
-      background: #2b7a0b;
-      text-align: center;
-      padding: 10px 0;
-    }
-    nav a {
-      color: white;
-      margin: 0 10px;
-      text-decoration: none;
+      font-size: clamp(1.65rem, 4vw, 2.35rem);
       font-weight: 600;
-      display: inline-block;
-      padding: 6px 5px;
-    }
-    nav a:hover {
-      text-decoration: underline;
+
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
     }
 
-    /* Hero Section */
-    .hero {
-      background: url('village.jpg') center/cover no-repeat;
-      color: white;
-      text-align: center;
-      padding: 80px 20px;
-      background-color: rgba(0, 0, 0, 0.4);
-      background-blend-mode: darken;
+    .header-center p {
+      color: #667788;
+      font-size: 0.98rem;
+      font-weight: 400;
     }
-    .hero h1 {
-      font-size: 2em;
+
+    /* =========================
+       NAVBAR
+    ========================== */
+
+    nav.navbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+
+      border-bottom: 1px solid #e7edf3;
+
+      padding: 12px 15px;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+
+      gap: 5px;
+
+      box-shadow: 0 3px 15px rgba(30, 60, 90, 0.05);
+    }
+
+    nav.navbar a {
+      position: relative;
+
+      color: #4c5f70;
+      text-decoration: none;
+
+      padding: 8px 13px;
+
+      font-size: 14px;
+      font-weight: 500;
+
+      border-radius: 8px;
+
+      transition:
+        color 0.25s ease,
+        background 0.25s ease,
+        transform 0.25s ease;
+    }
+
+    nav.navbar a:hover {
+      color: #1769aa;
+      background: #eef7ff;
+      transform: translateY(-1px);
+    }
+
+    /* Elegant active/highlight tab */
+
+    nav.navbar a.highlight-tab {
+      color: #1769aa;
+
+      background: #edf7ff;
+
+      border: 1px solid #cfe9fb;
+
+      font-weight: 600;
+
+      box-shadow: 0 3px 10px rgba(23, 105, 170, 0.08);
+    }
+
+    nav.navbar a.highlight-tab:hover {
+      background: #e2f2ff;
+      color: #0f5d96;
+    }
+
+    /* =========================
+       JOIN SECTION
+    ========================== */
+
+    section#join {
+      position: relative;
+
+      width: min(92%, 1100px);
+
+      margin: 45px auto;
+
+      padding: 65px 25px;
+
+      background:
+        linear-gradient(
+          rgba(255, 255, 255, 0.94),
+          rgba(255, 255, 255, 0.97)
+        ),
+        url('header-bg1.png') center/cover fixed;
+
+      border: 1px solid #e4ebf2;
+      border-radius: 22px;
+
+      box-shadow:
+        0 15px 45px rgba(31, 56, 80, 0.08);
+
+      animation: fadeInUp 0.8s ease;
+    }
+
+    section#join h2 {
+      font-family: 'Poppins', sans-serif;
+
+      text-align: center;
+
+      color: #173b5f;
+
+      font-size: clamp(1.7rem, 4vw, 2.15rem);
+
+      font-weight: 600;
+
       margin-bottom: 10px;
     }
-    .hero p {
-      font-size: 1.1em;
-      margin-bottom: 20px;
-    }
-    .hero button {
-      background: #fbc02d;
-      border: none;
-      padding: 10px 20px;
-      font-size: 1em;
-      border-radius: 5px;
-      cursor: pointer;
-    }
 
-    /* Section Base */
-    .section {
-      padding: 40px 20px;
-      max-width: 1000px;
-      margin: auto;
-    }
-    .section h2 {
-      color: #2b7a0b;
-      text-align: center;
-      margin-bottom: 20px;
-    }
+    section#join h2::after {
+      content: "";
 
-    /* About Section Photos */
-    .about-gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 15px;
-      margin-top: 25px;
-    }
-    .about-gallery img {
-      width: 100%;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      transition: transform 0.3s ease;
-    }
-    .about-gallery img:hover {
-      transform: scale(1.05);
-    }
-    .about-member p {
-      margin-top: 8px;
-      font-size: 0.95em;
-      text-align: center;
-      color: #333;
-    }
-
-    /* Cards */
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
-    }
-    .card {
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-      padding: 20px;
-      text-align: center;
-    }
-    .card h3 {
-      color: #1f5d07;
-    }
-
-    /* Video Gallery */
-    .video-gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-      justify-items: center;
-    }
-
-    .video-thumbnail {
-      position: relative;
-      width: 100%;
-      max-width: 350px;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      cursor: pointer;
-      transition: transform 0.3s ease;
-    }
-
-    .video-thumbnail:hover {
-      transform: scale(1.03);
-    }
-
-    .video-thumbnail img {
-      width: 100%;
-      height: auto;
       display: block;
+
+      width: 48px;
+      height: 3px;
+
+      margin: 12px auto 18px;
+
+      background: #4ba3d3;
+
+      border-radius: 20px;
     }
 
-    .play-button {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 50px;
-      color: white;
-      background: rgba(0, 0, 0, 0.6);
-      border-radius: 50%;
-      width: 70px;
-      height: 70px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.3s ease;
-    }
+    section#join > p {
+      max-width: 650px;
 
-    .video-thumbnail:hover .play-button {
-      background: rgba(255, 0, 0, 0.8);
-    }
+      margin: 0 auto 35px;
 
-    /* Donate Section */
-    .donate-section {
       text-align: center;
-      background: #f1f8e9;
-      padding: 40px 20px;
-      border-radius: 10px;
-    }
-    .donate-section img {
-      width: 160px;
-      margin-top: 10px;
+
+      color: #71808f;
+
+      font-size: 0.97rem;
     }
 
-    /* Buttons */
-    .btn {
-      background: #2b7a0b;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 5px;
-      text-decoration: none;
-      display: inline-block;
-      margin-top: 10px;
-    }
-    .btn:hover {
-      background: #256307;
+    /* =========================
+       FORM CARD
+    ========================== */
+
+    .join-form {
+      max-width: 570px;
+
+      margin: auto;
+
+      padding: 32px;
+
+      background: rgba(255, 255, 255, 0.98);
+
+      border: 1px solid #e3ebf2;
+
+      border-radius: 17px;
+
+      box-shadow:
+        0 10px 35px rgba(35, 65, 90, 0.08);
     }
 
-    /* Footer */
+    .join-form label {
+      display: block;
+
+      margin-bottom: 7px;
+
+      color: #344e63;
+
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .join-form input,
+    .join-form select,
+    .join-form textarea {
+      width: 100%;
+
+      padding: 12px 14px;
+
+      margin-bottom: 18px;
+
+      border: 1px solid #d8e2eb;
+
+      border-radius: 9px;
+
+      background: #fbfdff;
+
+      color: #263238;
+
+      font-family: 'Inter', sans-serif;
+
+      font-size: 14px;
+
+      outline: none;
+
+      transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        background 0.25s ease;
+    }
+
+    .join-form input::placeholder,
+    .join-form textarea::placeholder {
+      color: #a2adb7;
+    }
+
+    .join-form input:focus,
+    .join-form select:focus,
+    .join-form textarea:focus {
+      background: #ffffff;
+
+      border-color: #72b7df;
+
+      box-shadow:
+        0 0 0 3px rgba(74, 163, 211, 0.12);
+    }
+
+    .join-form textarea {
+      resize: vertical;
+      min-height: 105px;
+    }
+
+    /* =========================
+       BUTTON
+    ========================== */
+
+    .join-form button {
+      width: 100%;
+
+      margin-top: 5px;
+
+      padding: 13px 20px;
+
+      border: none;
+      border-radius: 9px;
+
+      background: #2f80b7;
+
+      color: #ffffff;
+
+      font-family: 'Inter', sans-serif;
+
+      font-size: 15px;
+      font-weight: 600;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 6px 18px rgba(47, 128, 183, 0.20);
+
+      transition:
+        background 0.25s ease,
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+    }
+
+    .join-form button:hover {
+      background: #246d9e;
+
+      transform: translateY(-2px);
+
+      box-shadow:
+        0 9px 22px rgba(47, 128, 183, 0.25);
+    }
+
+    .join-form button:active {
+      transform: translateY(0);
+    }
+
+    /* =========================
+       STATUS
+    ========================== */
+
+    #formStatus {
+      display: none;
+
+      margin-top: 18px;
+
+      padding: 11px 14px;
+
+      text-align: center;
+
+      color: #26734d;
+
+      background: #eefaf4;
+
+      border: 1px solid #ccebdc;
+
+      border-radius: 8px;
+
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* =========================
+       FOOTER
+    ========================== */
+
     footer {
-      background: #1f5d07;
-      color: white;
+      margin-top: 55px;
+
+      padding: 25px 15px;
+
+      background: #f0f4f8;
+
+      border-top: 1px solid #dfe7ee;
+
+      color: #71808d;
+
       text-align: center;
-      padding: 20px;
-      margin-top: 40px;
-      font-size: 0.9em;
+
+      font-size: 13px;
+
+      line-height: 1.8;
     }
 
-    /* Responsive */
-    @media (max-width: 600px) {
-      .hero {
-        padding: 50px 15px;
+    footer::first-line {
+      color: #526676;
+    }
+
+    /* =========================
+       ANIMATIONS
+    ========================== */
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
       }
-      .hero h1 {
-        font-size: 1.6em;
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
-      .hero p {
-        font-size: 0.95em;
+    }
+
+    /* =========================
+       MOBILE
+    ========================== */
+
+    @media (max-width: 700px) {
+
+      header {
+        padding: 42px 15px;
       }
+
       .header-center img {
-        width: 100px;
+        width: 95px;
+        height: 95px;
       }
-      nav a {
-        display: block;
-        margin: 8px 0;
+
+      .header-center h1 {
+        font-size: 1.5rem;
+        line-height: 1.35;
+      }
+
+      .header-center p {
+        font-size: 0.88rem;
+      }
+
+      nav.navbar {
+        padding: 9px 8px;
+        gap: 2px;
+      }
+
+      nav.navbar a {
+        padding: 7px 9px;
+        font-size: 12px;
+      }
+
+      section#join {
+        width: 94%;
+        margin: 25px auto;
+
+        padding: 40px 15px;
+
+        border-radius: 17px;
+      }
+
+      .join-form {
+        padding: 23px 18px;
+        border-radius: 13px;
+      }
+    }
+
+    @media (max-width: 400px) {
+
+      nav.navbar a {
+        font-size: 11px;
+        padding: 6px 7px;
+      }
+
+      .join-form {
+        padding: 20px 15px;
       }
     }
   </style>
@@ -260,203 +496,242 @@
 
 <body>
 
-  <!-- HEADER -->
-  <header>
-    <div class="header-center">
-      <img src="IMG-20250911-WA0006.jpg" alt="Village Youth Sangthan Logo">
-      <div class="text">
-        <h1>Amola Yuva Shakti Mandal Samiti</h1>
-        <p>Empowering Our Village Through Unity, Education & Progress</p>
-      </div>
+<!-- =========================
+     HEADER
+========================== -->
+
+<header>
+  <div class="header-center">
+
+    <img
+      src="IMG-20250911-WA0006.jpg"
+      alt="Amola Yuva Shakti Mandal Samiti Logo"
+    >
+
+    <div class="text">
+      <h1>Amola Yuva Shakti Mandal Samiti</h1>
+
+      <p>
+        Empowering Our Village Through Unity, Education &amp; Progress
+      </p>
     </div>
-  </header>
 
-  <!-- NAV -->
+  </div>
+</header>
 
 
+<!-- =========================
+     NAVBAR
+========================== -->
 
 <nav class="navbar">
-  <a href="#home">Home</a>
-  <a href="#about">About Us</a>
-  <a href="#activities">Activities</a>
-  <a href="#live">Live Program</a>
-  <a href="#gallery">Gallery</a>
-  <a href="#join">Join Us</a>
-  <a href="#donate">Support</a>
-  <a href="#contact">Contact</a>
+
+  <a href="index.html">Home</a>
+
+  <a href="about.html">About Us</a>
+
+  <a href="activities.html">Initiatives</a>
+
+  <a href="live.html">Live</a>
+
+  <a href="gallery.html">Gallery</a>
+
+  <a href="join.html">Join Us</a>
+
+  <a href="donate.html">Support Us</a>
+
+  <a href="contact.html">Contact</a>
+
+  <a href="member.html">Login</a>
+
+  <a href="news.html" class="highlight-tab">News</a>
+
 </nav>
 
-<style>
-.navbar {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  background-color: #b30000;
-  padding: 8px 0;
-}
 
-.navbar a {
-  color: white;
-  text-decoration: none;
-  margin: 0 6px;          /* reduced gap */
-  font-weight: 600;
-  font-size: 14px;        /* slightly smaller text */
-  transition: color 0.3s ease, transform 0.3s ease;
-}
+<!-- =========================
+     JOIN US
+========================== -->
 
-.navbar a:hover {
-  color: #ffcc00;
-  transform: scale(1.05);
-}
+<section id="join">
 
-/* Mobile optimization */
-@media (max-width: 600px) {
-  .navbar {
-    overflow-x: auto;
-    white-space: nowrap;
-    justify-content: flex-start;
-    -webkit-overflow-scrolling: touch;
-    padding: 6px 4px;
-  }
-  .navbar a {
-    margin: 0 8px;        /* minimal spacing on mobile */
-    font-size: 13px;
-  }
-  .navbar::-webkit-scrollbar {
-    display: none;         /* hides scrollbar */
-  }
-}
-</style>
+  <h2>Join Us</h2>
+
+  <p>
+    Be a part of Amola’s growth story.
+    Join us as a volunteer or member today!
+  </p>
 
 
+  <div class="join-form">
 
-  <!-- HERO -->
-  <section class="hero">
-    <h1>“हमारा गांव, हमारी जिम्मेदारी”</h1>
-    <p>Let us work together to build a stronger and progressive Village.</p>
-    <button onclick="window.location='#join'">Join Us</button>
-  </section>
+    <form id="joinForm">
 
-  <!-- ABOUT -->
-  <section id="about" class="section">
-    <h2>About Us</h2>
-    <p><strong>Amola Yuva Shakti Mandal Samiti</strong>, अमोला गाँव के युवाओं द्वारा संचालित एक सामुदायिक पहल है।
-    हमारा उद्देश्य शिक्षा, सांस्कृतिक विकास और स्व-रोजगार के अवसरों के माध्यम से हमारे लोगों की समग्र भलाई में सुधार करना है।</p>
+      <label for="name">
+        पूरा नाम
+      </label>
 
-    <div class="about-gallery">
-      <div class="about-member">
-        <img src="about1.jpg" alt="President">
-        <p><strong>श्री धर्मानंद<br>अमोली, अध्यक्ष</strong></p>
-      </div>
-      <div class="about-member">
-        <img src="about2.jpg" alt="Vice President">
-        <p><strong>श्री सुंदरमोहन<br>अमोली, उपाध्यक्ष</strong></p>
-      </div>
-      <div class="about-member">
-        <img src="about3.jpg" alt="Secretary">
-        <p><strong>श्री नरेश<br>अमोली, सचिव</strong></p>
-      </div>
-      <div class="about-member">
-        <img src="about4.jpg" alt="Treasurer">
-        <p><strong>श्री सूर्य प्रकाश<br>अमोली, कोषाध्यक्ष</strong></p>
-      </div>
-      <div class="about-member">
-        <img src="about5.jpg" alt="Coordinator">
-        <p><strong>श्री संदीप<br>अमोली, संयोजक</strong></p>
-      </div>
-    </div>
-  </section>
+      <input
+        type="text"
+        id="name"
+        name="entry.1670287664"
+        placeholder="आपका नाम"
+        required
+      >
 
-  <!-- ACTIVITIES -->
-  <section id="activities" class="section">
-    <h2>Our Key Initiatives</h2>
-    <div class="cards">
-      <div class="card">
-        <h3>💧 Water Conservation</h3>
-        <p>Rainwater harvesting, pond rejuvenation, and clean water awareness.</p>
-      </div>
-      <div class="card">
-        <h3>📚 Education</h3>
-        <p>Study support, digital literacy, and skill-based learning programs.</p>
-      </div>
-      <div class="card">
-        <h3>💼 Self Employment</h3>
-        <p>Encouraging entrepreneurship and providing vocational guidance.</p>
-      </div>
-      <div class="card">
-        <h3>🎭 Cultural Programs</h3>
-        <p>Organizing sports, festivals, and traditional events to unite the community.</p>
-      </div>
-    </div>
-  </section>
 
-  <!-- LIVE -->
-  <section id="live" class="section">
-    <h2>Watch Our Programs</h2>
-    <p>Stay connected! Watch our events, awareness campaigns, and cultural programs live on YouTube or Facebook.</p>
+      <label for="email">
+        ईमेल
+      </label>
 
-    <div class="video-gallery">
-      <div class="video-thumbnail">
-        <a href="https://www.youtube.com/watch?v=3aaXkYOrSFw" target="_blank">
-          <img src="https://img.youtube.com/vi/3aaXkYOrSFw/hqdefault.jpg" alt="Watch Live on YouTube">
-          <div class="play-button">▶</div>
-        </a>
-        <strong><p class="video-title">ग्राम सभा - अमोला</p></strong>
-      </div>
-      <div class="video-thumbnail">
-        <a href="https://www.youtube.com/watch?v=D1tk3CzPFVQ" target="_blank">
-          <img src="https://img.youtube.com/vi/D1tk3CzPFVQ/hqdefault.jpg" alt="Watch Live on YouTube">
-          <div class="play-button">▶</div>
-        </a>
-        <strong><p class="video-title">52 गढ़ होम स्टे, अमोला</p></strong>
-      </div>
-    </div>
-  </section>
+      <input
+        type="email"
+        id="email"
+        name="entry.421971899"
+        placeholder="आपका ईमेल"
+        required
+      >
 
-  <!-- DONATE -->
-  <section id="donate" class="section donate-section">
-    <h2>Support Our Mission</h2>
-    <p>Your contribution helps us continue our education, environment, and employment initiatives.</p>
-    <img src="qr-code.png" alt="UPI QR Code" />
-    <p><strong>UPI ID:</strong> amolayuvashaktimandalsamiti@upi</p>
-    <p><strong>Bank:</strong> ABC Bank, A/C No. XXXXXXXX1234, IFSC: ABCD0001234</p>
-    <a href="upi://pay?pa=sangthanname@upi&pn=Village+Youth+Sangthan&cu=INR" class="btn">Donate via UPI</a>
-  </section>
 
-  <!-- JOIN -->
-  <section id="join" class="section">
-    <h2>Join the Samiti</h2>
-    <p>Be a part of Amola’s growth story. Join us as a volunteer or member today!</p>
-    <a href="https://forms.gle/YOUR_GOOGLE_FORM_LINK" class="btn">Join Us</a>
-  </section>
+      <label for="phone">
+        फ़ोन नंबर
+      </label>
 
-  <!-- CONTACT -->
-  <section id="contact" class="section">
-    <h2>Contact Us</h2>
-    <p>📍 Amola Village, Pauri Garhwal, Uttarakhand</p>
-    <p>📧 Email: contact@amolayuvashaktimandalsamiti.org</p>
-    <p>☎️ Phone: +91 XXXXX XXXXX</p>
-    <p>🌐 Follow us:
-      <a href="https://facebook.com/YOURPAGE" style="color:#2b7a0b;">Facebook</a> |
-      <a href="https://youtube.com/YOURCHANNEL" style="color:#2b7a0b;">YouTube</a> |
-      <a href="https://instagram.com/YOURPAGE" style="color:#2b7a0b;">Instagram</a>
+      <input
+        type="tel"
+        id="phone"
+        name="entry.738729535"
+        placeholder="आपका फ़ोन नंबर"
+        required
+      >
+
+
+      <label for="interest">
+        रुचि का क्षेत्र
+      </label>
+
+      <select
+        id="interest"
+        name="entry.238501867"
+        required
+      >
+
+        <option value="">
+          -- कृपया चुनें --
+        </option>
+
+        <option value="शिक्षा">
+          शिक्षा
+        </option>
+
+        <option value="स्वयं रोजगार">
+          स्वयं रोजगार
+        </option>
+
+        <option value="सांस्कृतिक कार्यक्रम">
+          सांस्कृतिक कार्यक्रम
+        </option>
+
+        <option value="पर्यावरण/सामुदायिक सेवा">
+          पर्यावरण/सामुदायिक सेवा
+        </option>
+
+      </select>
+
+
+      <label for="message">
+        संदेश / सुझाव
+      </label>
+
+      <textarea
+        id="message"
+        name="entry.728205872"
+        rows="4"
+        placeholder="कोई संदेश या सुझाव"
+      ></textarea>
+
+
+      <button type="submit">
+        फॉर्म सबमिट करें
+      </button>
+
+    </form>
+
+
+    <p id="formStatus">
+      ✅ आपका विवरण सफलतापूर्वक जमा हो गया है! धन्यवाद।
     </p>
-  </section>
 
-  <!-- FOOTER -->
-  <footer>
-    © 2025 Amola Yuva Shakti Mandal Samiti | All Rights Reserved<br>
-    Designed & Managed by Rohit Amoli
-  </footer>
+  </div>
+
+</section>
+
+
+<!-- =========================
+     FOOTER
+========================== -->
+
+<footer>
+
+  © 2025 Amola Yuva Shakti Mandal Samiti |
+  All Rights Reserved
+
+  <br>
+
+  Designed &amp; Managed by Rohit Amoli
+
+</footer>
+
+
+<!-- =========================
+     FORM SCRIPT
+========================== -->
+
+<script>
+
+document
+  .getElementById("joinForm")
+  .addEventListener("submit", function(e) {
+
+    e.preventDefault();
+
+    const form = e.target;
+
+    const data = new FormData(form);
+
+    fetch(
+      "https://docs.google.com/forms/d/e/1FAIpQLSeYvDbrrrmjOMDnSavy_yq8Ah-YG6fy3MKeXmwVjqftavxokg/formResponse",
+      {
+        method: "POST",
+        body: data,
+        mode: "no-cors"
+      }
+    )
+
+    .then(() => {
+
+      document.getElementById("formStatus").style.display = "block";
+
+      form.reset();
+
+    })
+
+    .catch((error) => {
+
+      alert(
+        "⚠️ सबमिट करते समय कोई त्रुटि हुई, कृपया पुनः प्रयास करें।"
+      );
+
+      console.error(
+        "Error!",
+        error.message
+      );
+
+    });
+
+  });
+
+</script>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
