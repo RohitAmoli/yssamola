@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b2c1c" />
+  <title>Join Us — Amola Yuva Shakti Mandal Samiti</title>
+  <meta name="description" content="Be a part of Amola’s growth story. Join us as a volunteer or member today." />
+  <link rel="icon" href="assets/img/IMG-20250911-WA0007.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Mukta:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <nav class="nav container" aria-label="Main navigation">
+      <a class="brand" href="index.html">
+        <img class="brand__logo" src="assets/img/IMG-20250911-WA0007.jpg" alt="Amola Yuva Shakti Mandal Samiti logo" />
+        <span class="brand__text"><span class="brand__name">Amola Yuva Shakti</span><span class="brand__tag">Mandal Samiti</span></span>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="activities.html">Initiatives</a>
+        <a href="live.html">Live</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="join.html">Join</a>
+        <a href="contact.html">Contact</a>
+        <a href="member.html">Login</a>
+        <a href="news.html" class="news-link">News</a>
+        <a href="donate.html" class="btn btn-accent drawer-only">Support Us</a>
+      </div>
+      <div class="nav-actions">
+        <a href="donate.html" class="btn btn-accent">Support Us</a>
+        <button class="nav-toggle" aria-label="Toggle menu" aria-controls="navLinks"><span></span></button>
+      </div>
+    </nav>
+  </header>
+  <div class="nav-backdrop"></div>
+
+  <main>
+    <section class="page-hero" style="--hero-img:url('assets/img/slide1.png')">
+      <div class="container">
+        <span class="kicker">Join Us</span>
+        <h1>Be part of Amola’s <em>growth story</em></h1>
+        <p>Join us as a volunteer or member today — बदलाव का हिस्सा बनें।</p>
+        <div class="crumbs"><a href="index.html">Home</a><span>/</span>Join Us</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="hero__grid" style="align-items:start">
+          <div class="reveal">
+            <span class="kicker">Why Join</span>
+            <h2 class="section-title" style="font-size:clamp(1.7rem,3.4vw,2.4rem)">Your time can <em>change lives</em></h2>
+            <p class="section-sub">Contribute your skills, ideas and energy to a cause that strengthens our village.</p>
+            <ul class="info-list" style="margin-top:24px">
+              <li><span class="ic">📚</span><div><b>शिक्षा</b><span>Support children’s learning and mentoring.</span></div></li>
+              <li><span class="ic saffron">💼</span><div><b>स्वयं रोजगार</b><span>Enable skill-building and livelihoods.</span></div></li>
+              <li><span class="ic">🎭</span><div><b>सांस्कृतिक कार्यक्रम</b><span>Keep our traditions alive and vibrant.</span></div></li>
+              <li><span class="ic saffron">🌱</span><div><b>पर्यावरण/सामुदायिक सेवा</b><span>Protect nature and serve the community.</span></div></li>
+            </ul>
+          </div>
+
+          <div class="form-card reveal" data-delay="2">
+            <h3 style="font-size:1.35rem;margin-bottom:6px">सदस्यता / स्वयंसेवक फॉर्म</h3>
+            <p style="color:var(--muted);font-size:.94rem;margin-bottom:22px">सभी विवरण भरें और सबमिट करें।</p>
+            <form id="joinForm">
+              <div class="field"><label for="name">पूरा नाम</label><input type="text" id="name" name="entry.1670287664" placeholder="आपका नाम" required /></div>
+              <div class="field"><label for="email">ईमेल</label><input type="email" id="email" name="entry.421971899" placeholder="आपका ईमेल" required /></div>
+              <div class="field"><label for="phone">फ़ोन नंबर</label><input type="tel" id="phone" name="entry.738729535" placeholder="आपका फ़ोन नंबर" required /></div>
+              <div class="field"><label for="interest">रुचि का क्षेत्र</label>
+                <select id="interest" name="entry.238501867" required>
+                  <option value="">-- कृपया चुनें --</option>
+                  <option value="शिक्षा">शिक्षा</option>
+                  <option value="स्वयं रोजगार">स्वयं रोजगार</option>
+                  <option value="सांस्कृतिक कार्यक्रम">सांस्कृतिक कार्यक्रम</option>
+                  <option value="पर्यावरण/सामुदायिक सेवा">पर्यावरण/सामुदायिक सेवा</option>
+                </select>
+              </div>
+              <div class="field"><label for="message">संदेश / सुझाव</label><textarea id="message" name="entry.728205872" rows="4" placeholder="कोई संदेश या सुझाव"></textarea></div>
+              <button type="submit" class="btn btn-primary" style="width:100%">फॉर्म सबमिट करें</button>
+            </form>
+            <p id="formStatus" class="form-status">✅ आपका विवरण सफलतापूर्वक जमा हो गया है! धन्यवाद।</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="footer-brand"><img src="assets/img/IMG-20250911-WA0007.jpg" alt="Logo" /><b>Amola Yuva Shakti<br />Mandal Samiti</b></div>
+          <p>A registered non-political, social &amp; charitable society connecting Amola’s families and driving education, culture, environment and youth empowerment.</p>
+          <div class="footer-social">
+            <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 9h3l.5-3H14V4.5c0-.9.3-1.5 1.6-1.5H18V.2C17.6.1 16.5 0 15.3 0 12.7 0 11 1.6 11 4.2V6H8v3h3v9h3z"/></svg></a>
+            <a href="https://youtube.com" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.7-1.7C19.4 5.2 12 5.2 12 5.2s-7.4 0-8.9.4a2.5 2.5 0 0 0-1.7 1.7C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.7 1.7c1.5.4 8.9.4 8.9.4s7.4 0 8.9-.4a2.5 2.5 0 0 0 1.7-1.7C23 15.2 23 12 23 12zM9.8 15.3V8.7l5.7 3.3z"/></svg></a>
+            <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+          </div>
+        </div>
+        <div class="footer-col"><h4>Explore</h4><ul><li><a href="about.html">About Us</a></li><li><a href="activities.html">Initiatives</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="live.html">Live Programs</a></li><li><a href="news.html">News &amp; Updates</a></li></ul></div>
+        <div class="footer-col"><h4>Get Involved</h4><ul><li><a href="join.html">Join Us</a></li><li><a href="donate.html">Support Us</a></li><li><a href="member.html">Member Login</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+        <div class="footer-col"><h4>Reach Us</h4><ul class="footer-contact">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Village &amp; P.O. Amola, Block Yamkeshwar, Pauri Garhwal, Uttarakhand — 246121</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg><a href="mailto:contact@amolayuvashaktimandalsamiti.org">contact@amolayuvashaktimandalsamiti.org</a></li>
+        </ul></div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span data-year>2026</span> Amola Yuva Shakti Mandal Samiti · Designed &amp; Managed by <b>YSSAMOLA</b></span>
+        <span class="reg-chip">Reg. No. UK0600872026016193</span>
+      </div>
+    </div>
+  </footer>
+
+  <button id="topBtn" aria-label="Back to top"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+  <script src="main.js"></script>
+  <script>
+    document.getElementById("joinForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = new FormData(form);
+      fetch("https://docs.google.com/forms/d/e/1FAIpQLSeYvDbrrrmjOMDnSavy_yq8Ah-YG6fy3MKeXmwVjqftavxokg/formResponse", {
+        method: "POST",
+        body: data,
+        mode: "no-cors",
+      })
+        .then(() => {
+          document.getElementById("formStatus").classList.add("show");
+          form.reset();
+        })
+        .catch((error) => {
+          alert("⚠️ सबमिट करते समय कोई त्रुटि हुई, कृपया पुनः प्रयास करें।");
+          console.error("[v0] Join form error:", error.message);
+        });
+    });
+  </script>
+</body>
+</html>

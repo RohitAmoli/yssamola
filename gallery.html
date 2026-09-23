@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b2c1c" />
+  <title>Gallery — Amola Yuva Shakti Mandal Samiti</title>
+  <meta name="description" content="Highlights from our events, awareness drives and cultural programs at Amola." />
+  <link rel="icon" href="assets/img/IMG-20250911-WA0007.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Mukta:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .gallery-grid { columns: 3 260px; column-gap: 18px; }
+    .gallery-grid .media-item {
+      break-inside: avoid; margin-bottom: 18px; border-radius: var(--radius);
+      overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--line);
+      background: var(--surface); transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .gallery-grid .media-item:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .gallery-grid img { width: 100%; display: block; }
+    .gallery-grid iframe { width: 100%; aspect-ratio: 16/9; border: 0; display: block; }
+    .g-loader { text-align: center; padding: 40px 0; color: var(--forest-700); font-weight: 600; }
+    .g-loader .bar { width: 90px; height: 4px; border-radius: 3px; background: var(--forest-tint); margin: 0 auto 14px; overflow: hidden; position: relative; }
+    .g-loader .bar::after { content: ""; position: absolute; inset: 0; width: 40%; background: var(--grad-forest); border-radius: 3px; animation: slide 1.1s infinite ease-in-out; }
+    @keyframes slide { 0% { left: -40%; } 100% { left: 100%; } }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <nav class="nav container" aria-label="Main navigation">
+      <a class="brand" href="index.html">
+        <img class="brand__logo" src="assets/img/IMG-20250911-WA0007.jpg" alt="Amola Yuva Shakti Mandal Samiti logo" />
+        <span class="brand__text"><span class="brand__name">Amola Yuva Shakti</span><span class="brand__tag">Mandal Samiti</span></span>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="activities.html">Initiatives</a>
+        <a href="live.html">Live</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="join.html">Join</a>
+        <a href="contact.html">Contact</a>
+        <a href="member.html">Login</a>
+        <a href="news.html" class="news-link">News</a>
+        <a href="donate.html" class="btn btn-accent drawer-only">Support Us</a>
+      </div>
+      <div class="nav-actions">
+        <a href="donate.html" class="btn btn-accent">Support Us</a>
+        <button class="nav-toggle" aria-label="Toggle menu" aria-controls="navLinks"><span></span></button>
+      </div>
+    </nav>
+  </header>
+  <div class="nav-backdrop"></div>
+
+  <main>
+    <section class="page-hero" style="--hero-img:url('assets/img/slide10.png')">
+      <div class="container">
+        <span class="kicker">Gallery</span>
+        <h1>Moments from our <em>community</em></h1>
+        <p>Explore highlights from our events, awareness drives and cultural programs.</p>
+        <div class="crumbs"><a href="index.html">Home</a><span>/</span>Gallery</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div id="galleryLoader" class="g-loader"><div class="bar"></div>Loading gallery…</div>
+        <div id="galleryGrid" class="gallery-grid" style="display:none"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="footer-brand"><img src="assets/img/IMG-20250911-WA0007.jpg" alt="Logo" /><b>Amola Yuva Shakti<br />Mandal Samiti</b></div>
+          <p>A registered non-political, social &amp; charitable society connecting Amola’s families and driving education, culture, environment and youth empowerment.</p>
+          <div class="footer-social">
+            <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 9h3l.5-3H14V4.5c0-.9.3-1.5 1.6-1.5H18V.2C17.6.1 16.5 0 15.3 0 12.7 0 11 1.6 11 4.2V6H8v3h3v9h3z"/></svg></a>
+            <a href="https://youtube.com" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.7-1.7C19.4 5.2 12 5.2 12 5.2s-7.4 0-8.9.4a2.5 2.5 0 0 0-1.7 1.7C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.7 1.7c1.5.4 8.9.4 8.9.4s7.4 0 8.9-.4a2.5 2.5 0 0 0 1.7-1.7C23 15.2 23 12 23 12zM9.8 15.3V8.7l5.7 3.3z"/></svg></a>
+            <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+          </div>
+        </div>
+        <div class="footer-col"><h4>Explore</h4><ul><li><a href="about.html">About Us</a></li><li><a href="activities.html">Initiatives</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="live.html">Live Programs</a></li><li><a href="news.html">News &amp; Updates</a></li></ul></div>
+        <div class="footer-col"><h4>Get Involved</h4><ul><li><a href="join.html">Join Us</a></li><li><a href="donate.html">Support Us</a></li><li><a href="member.html">Member Login</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+        <div class="footer-col"><h4>Reach Us</h4><ul class="footer-contact">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Village &amp; P.O. Amola, Block Yamkeshwar, Pauri Garhwal, Uttarakhand — 246121</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg><a href="mailto:contact@amolayuvashaktimandalsamiti.org">contact@amolayuvashaktimandalsamiti.org</a></li>
+        </ul></div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span data-year>2026</span> Amola Yuva Shakti Mandal Samiti · Designed &amp; Managed by <b>YSSAMOLA</b></span>
+        <span class="reg-chip">Reg. No. UK0600872026016193</span>
+      </div>
+    </div>
+  </footer>
+
+  <button id="topBtn" aria-label="Back to top"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+  <script src="main.js"></script>
+  <script>
+    const apiURL = "https://script.google.com/macros/s/AKfycbz2kXjBWakKicBopx4dW-nZzyymKDaUq6L6FEEwILizhqKIUoPVgxdhnzHPeli09RYAMg/exec";
+    const loader = document.getElementById("galleryLoader");
+    const grid = document.getElementById("galleryGrid");
+
+    fetch(apiURL)
+      .then((res) => res.json())
+      .then((data) => {
+        grid.innerHTML = "";
+        (data || []).forEach((file) => {
+          const wrapper = document.createElement("div");
+          wrapper.className = "media-item";
+          if (file.type === "image") {
+            const img = document.createElement("img");
+            img.src = "https://lh3.googleusercontent.com/d/" + file.id + "=w800";
+            img.alt = file.name || "Gallery image";
+            img.loading = "lazy";
+            wrapper.appendChild(img);
+          } else if (file.type === "video") {
+            const iframe = document.createElement("iframe");
+            iframe.src = "https://drive.google.com/file/d/" + file.id + "/preview";
+            iframe.allow = "autoplay";
+            iframe.loading = "lazy";
+            wrapper.appendChild(iframe);
+          }
+          grid.appendChild(wrapper);
+        });
+        loader.style.display = "none";
+        grid.style.display = "block";
+      })
+      .catch((err) => {
+        console.error("[v0] Error loading gallery:", err);
+        loader.innerHTML = "We couldn’t load the gallery right now. Please try again later.";
+      });
+  </script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b2c1c" />
+  <title>Live Programs — Amola Yuva Shakti Mandal Samiti</title>
+  <meta name="description" content="Watch our community events, awareness campaigns and cultural programs from Amola on YouTube." />
+  <link rel="icon" href="assets/img/IMG-20250911-WA0007.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Mukta:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 26px; }
+    .video-card {
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+      overflow: hidden; box-shadow: var(--shadow-sm); transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .video-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+    .video-thumb { position: relative; aspect-ratio: 16 / 9; overflow: hidden; }
+    .video-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+    .video-card:hover .video-thumb img { transform: scale(1.06); }
+    .video-thumb::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(11,44,28,0.4)); }
+    .video-play {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2;
+      width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center;
+      background: rgba(255,255,255,0.92); color: var(--forest-700); box-shadow: var(--shadow-md);
+      transition: transform 0.3s, background 0.3s, color 0.3s;
+    }
+    .video-card:hover .video-play { background: var(--saffron-500); color: #3a1d00; transform: translate(-50%, -50%) scale(1.1); }
+    .video-title { padding: 16px 18px; font-weight: 600; color: var(--ink); font-family: var(--font-body); }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <nav class="nav container" aria-label="Main navigation">
+      <a class="brand" href="index.html">
+        <img class="brand__logo" src="assets/img/IMG-20250911-WA0007.jpg" alt="Amola Yuva Shakti Mandal Samiti logo" />
+        <span class="brand__text"><span class="brand__name">Amola Yuva Shakti</span><span class="brand__tag">Mandal Samiti</span></span>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="activities.html">Initiatives</a>
+        <a href="live.html">Live</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="join.html">Join</a>
+        <a href="contact.html">Contact</a>
+        <a href="member.html">Login</a>
+        <a href="news.html" class="news-link">News</a>
+        <a href="donate.html" class="btn btn-accent drawer-only">Support Us</a>
+      </div>
+      <div class="nav-actions">
+        <a href="donate.html" class="btn btn-accent">Support Us</a>
+        <button class="nav-toggle" aria-label="Toggle menu" aria-controls="navLinks"><span></span></button>
+      </div>
+    </nav>
+  </header>
+  <div class="nav-backdrop"></div>
+
+  <main>
+    <section class="page-hero" style="--hero-img:url('assets/img/slide7.png')">
+      <div class="container">
+        <span class="kicker">Watch &amp; Connect</span>
+        <h1>Our programs, <em>live &amp; on record</em></h1>
+        <p>Stay connected — watch our community events, awareness campaigns and cultural programs on YouTube.</p>
+        <div class="crumbs"><a href="index.html">Home</a><span>/</span>Live</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="video-grid">
+          <a class="video-card reveal" data-delay="1" href="https://www.youtube.com/watch?v=3aaXkYOrSFw" target="_blank" rel="noopener">
+            <div class="video-thumb"><img src="https://img.youtube.com/vi/3aaXkYOrSFw/hqdefault.jpg" alt="ग्राम सभा - अमोला" /><span class="video-play"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></div>
+            <div class="video-title">ग्राम सभा — अमोला</div>
+          </a>
+          <a class="video-card reveal" data-delay="2" href="https://www.youtube.com/watch?v=D1tk3CzPFVQ" target="_blank" rel="noopener">
+            <div class="video-thumb"><img src="https://img.youtube.com/vi/D1tk3CzPFVQ/hqdefault.jpg" alt="52 गढ़ होम स्टे, अमोला" /><span class="video-play"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></div>
+            <div class="video-title">52 गढ़ होम स्टे, अमोला</div>
+          </a>
+          <a class="video-card reveal" data-delay="3" href="https://youtu.be/77V22u_h3-w" target="_blank" rel="noopener">
+            <div class="video-thumb"><img src="https://img.youtube.com/vi/77V22u_h3-w/hqdefault.jpg" alt="रामलीला 2021 — इंद्र गाना" /><span class="video-play"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></div>
+            <div class="video-title">रामलीला 2021 · इंद्र गाना</div>
+          </a>
+          <a class="video-card reveal" data-delay="1" href="https://youtube.com/shorts/L1j1CIb2gVw" target="_blank" rel="noopener">
+            <div class="video-thumb"><img src="https://img.youtube.com/vi/L1j1CIb2gVw/hqdefault.jpg" alt="मेघनाद — अमोला ताछला रामलीला" /><span class="video-play"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></div>
+            <div class="video-title">मेघनाद · अमोला ताछला रामलीला</div>
+          </a>
+          <a class="video-card reveal" data-delay="2" href="https://youtube.com/shorts/kIFhOB9jGBo" target="_blank" rel="noopener">
+            <div class="video-thumb"><img src="https://img.youtube.com/vi/kIFhOB9jGBo/hqdefault.jpg" alt="सीता स्वयंवर में परशुराम — अमोला रामलीला" /><span class="video-play"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></div>
+            <div class="video-title">सीता स्वयंवर में परशुराम</div>
+          </a>
+          <a class="video-card reveal" data-delay="3" href="https://youtube.com" target="_blank" rel="noopener" style="display:grid;place-items:center;text-align:center;padding:30px;background:var(--grad-forest);color:#fff;border:none">
+            <div>
+              <svg viewBox="0 0 24 24" width="42" height="42" fill="currentColor" style="margin:0 auto 12px"><path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.7-1.7C19.4 5.2 12 5.2 12 5.2s-7.4 0-8.9.4a2.5 2.5 0 0 0-1.7 1.7C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.7 1.7c1.5.4 8.9.4 8.9.4s7.4 0 8.9-.4a2.5 2.5 0 0 0 1.7-1.7C23 15.2 23 12 23 12zM9.8 15.3V8.7l5.7 3.3z"/></svg>
+              <div style="font-family:var(--font-display);font-size:1.2rem;font-weight:600">Subscribe on YouTube</div>
+              <p style="color:rgba(255,255,255,.85);font-size:.9rem;margin-top:6px">Never miss a program or update</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="footer-brand"><img src="assets/img/IMG-20250911-WA0007.jpg" alt="Logo" /><b>Amola Yuva Shakti<br />Mandal Samiti</b></div>
+          <p>A registered non-political, social &amp; charitable society connecting Amola’s families and driving education, culture, environment and youth empowerment.</p>
+          <div class="footer-social">
+            <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 9h3l.5-3H14V4.5c0-.9.3-1.5 1.6-1.5H18V.2C17.6.1 16.5 0 15.3 0 12.7 0 11 1.6 11 4.2V6H8v3h3v9h3z"/></svg></a>
+            <a href="https://youtube.com" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.7-1.7C19.4 5.2 12 5.2 12 5.2s-7.4 0-8.9.4a2.5 2.5 0 0 0-1.7 1.7C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.7 1.7c1.5.4 8.9.4 8.9.4s7.4 0 8.9-.4a2.5 2.5 0 0 0 1.7-1.7C23 15.2 23 12 23 12zM9.8 15.3V8.7l5.7 3.3z"/></svg></a>
+            <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+          </div>
+        </div>
+        <div class="footer-col"><h4>Explore</h4><ul><li><a href="about.html">About Us</a></li><li><a href="activities.html">Initiatives</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="live.html">Live Programs</a></li><li><a href="news.html">News &amp; Updates</a></li></ul></div>
+        <div class="footer-col"><h4>Get Involved</h4><ul><li><a href="join.html">Join Us</a></li><li><a href="donate.html">Support Us</a></li><li><a href="member.html">Member Login</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+        <div class="footer-col"><h4>Reach Us</h4><ul class="footer-contact">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Village &amp; P.O. Amola, Block Yamkeshwar, Pauri Garhwal, Uttarakhand — 246121</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg><a href="mailto:contact@amolayuvashaktimandalsamiti.org">contact@amolayuvashaktimandalsamiti.org</a></li>
+        </ul></div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span data-year>2026</span> Amola Yuva Shakti Mandal Samiti · Designed &amp; Managed by <b>YSSAMOLA</b></span>
+        <span class="reg-chip">Reg. No. UK0600872026016193</span>
+      </div>
+    </div>
+  </footer>
+
+  <button id="topBtn" aria-label="Back to top"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+  <script src="main.js"></script>
+</body>
+</html>

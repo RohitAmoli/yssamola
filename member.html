@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b2c1c" />
+  <title>Member &amp; Admin Login — Amola Yuva Shakti Mandal Samiti</title>
+  <meta name="description" content="Secure portal for members and administrators of Amola Yuva Shakti Mandal Samiti." />
+  <link rel="icon" href="assets/img/IMG-20250911-WA0007.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Mukta:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .tabs { display: flex; gap: 8px; background: var(--cream); padding: 6px; border-radius: var(--radius-pill); border: 1px solid var(--line); margin-bottom: 22px; }
+    .tab-btn { flex: 1; padding: 11px 14px; border: none; background: transparent; color: var(--muted); font-family: var(--font-body); font-weight: 600; font-size: 0.9rem; border-radius: var(--radius-pill); cursor: pointer; transition: all 0.25s; }
+    .tab-btn.active { background: var(--grad-forest); color: #fff; box-shadow: var(--shadow-sm); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .msg { margin-top: 12px; font-weight: 600; font-size: 0.9rem; }
+    .msg.error { color: #c0392b; }
+    .portal-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .portal-table th, .portal-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+    .portal-table th { background: var(--forest-700); color: #fff; position: sticky; top: 0; font-weight: 600; }
+    .portal-table tbody tr:nth-child(even) { background: var(--cream); }
+    .table-wrap { max-height: 460px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+    .media-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 20px; }
+    .media-gallery > div { border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; background: var(--surface); box-shadow: var(--shadow-sm); }
+    .media-gallery img, .media-gallery iframe { width: 100%; height: 150px; object-fit: cover; display: block; border: 0; }
+    .media-gallery button { width: 100%; border: 0; padding: 9px; background: #c0392b; color: #fff; font-weight: 600; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <nav class="nav container" aria-label="Main navigation">
+      <a class="brand" href="index.html">
+        <img class="brand__logo" src="assets/img/IMG-20250911-WA0007.jpg" alt="Amola Yuva Shakti Mandal Samiti logo" />
+        <span class="brand__text"><span class="brand__name">Amola Yuva Shakti</span><span class="brand__tag">Mandal Samiti</span></span>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="activities.html">Initiatives</a>
+        <a href="live.html">Live</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="join.html">Join</a>
+        <a href="contact.html">Contact</a>
+        <a href="member.html">Login</a>
+        <a href="news.html" class="news-link">News</a>
+        <a href="donate.html" class="btn btn-accent drawer-only">Support Us</a>
+      </div>
+      <div class="nav-actions">
+        <a href="donate.html" class="btn btn-accent">Support Us</a>
+        <button class="nav-toggle" aria-label="Toggle menu" aria-controls="navLinks"><span></span></button>
+      </div>
+    </nav>
+  </header>
+  <div class="nav-backdrop"></div>
+
+  <main>
+    <section class="page-hero" style="--hero-img:url('assets/img/slide5.png')">
+      <div class="container">
+        <span class="kicker">Portal</span>
+        <h1>Member &amp; Admin <em>login</em></h1>
+        <p>Members can view content and participate; admins manage media and members.</p>
+        <div class="crumbs"><a href="index.html">Home</a><span>/</span>Login</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <!-- LOGIN -->
+        <div id="loginSection" style="max-width:460px;margin:0 auto">
+          <div class="form-card reveal">
+            <h2 class="text-center" style="font-size:1.5rem;margin-bottom:18px">Login Portal</h2>
+            <div class="tabs" role="tablist">
+              <button class="tab-btn active" data-login="member" role="tab">Member Login</button>
+              <button class="tab-btn" data-login="admin" role="tab">Admin Login</button>
+            </div>
+            <div id="memberTabContent" class="tab-panel active">
+              <div class="field"><label for="memberCode">Member Access Code</label><input type="password" id="memberCode" placeholder="Enter member access code" /></div>
+              <button class="btn btn-primary" style="width:100%" onclick="checkLogin('member')">Login</button>
+              <p id="memberMessage" class="msg"></p>
+              <p style="color:var(--muted);font-size:.88rem;margin-top:12px">Members can access their profile, view content, and participate in activities.</p>
+            </div>
+            <div id="adminTabContent" class="tab-panel">
+              <div class="field"><label for="adminCode">Admin Access Code</label><input type="password" id="adminCode" placeholder="Enter admin access code" /></div>
+              <button class="btn btn-primary" style="width:100%" onclick="checkLogin('admin')">Login</button>
+              <p id="adminMessage" class="msg"></p>
+              <p style="color:var(--muted);font-size:.88rem;margin-top:12px">Admins can manage members and perform all system operations.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PORTAL -->
+        <div id="uploadSection" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:22px">
+            <div class="tabs" id="tabsContainer" style="margin-bottom:0;max-width:420px;flex:1">
+              <button class="tab-btn active" onclick="openTab('mediaTab', this)" id="mediaTabBtn">Media Upload</button>
+              <button class="tab-btn" onclick="openTab('memberListTab', this)">Member List</button>
+            </div>
+            <button class="btn btn-outline" onclick="logoutMember()">Logout</button>
+          </div>
+
+          <div id="mediaTab" class="tab-panel active">
+            <div class="form-card" style="max-width:520px;margin:0 auto">
+              <h2 style="font-size:1.3rem;margin-bottom:16px">Media Upload</h2>
+              <div class="field"><input type="file" id="fileInput" accept="image/*,video/*" /></div>
+              <button class="btn btn-primary" style="width:100%" onclick="uploadFile()">Upload</button>
+              <p id="uploadStatus" class="msg"></p>
+            </div>
+            <div id="mediaGallery" class="media-gallery"></div>
+          </div>
+
+          <div id="memberListTab" class="tab-panel">
+            <div class="form-card">
+              <h2 style="font-size:1.3rem;margin-bottom:6px">Registered Members</h2>
+              <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px">Search members or download the complete list.</p>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+                <input type="text" id="memberSearch" placeholder="Search members…" onkeyup="filterMembers()" style="flex:1;min-width:200px;font-family:var(--font-body);font-size:.95rem;padding:12px 15px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);background:var(--cream)" />
+                <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vQMXTRIOrP0xYcPWd0JoinzcQpxa2v8cjsF40l_QnTlcOchBelbWxX97t33osgrPoHjMMiE6ulMlGbM/pub?output=csv" target="_blank" rel="noopener" class="btn btn-outline">Download CSV</a>
+              </div>
+              <div class="table-wrap">
+                <table class="portal-table" id="memberTable">
+                  <thead><tr id="memberTableHeader"></tr></thead>
+                  <tbody id="memberTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="footer-brand"><img src="assets/img/IMG-20250911-WA0007.jpg" alt="Logo" /><b>Amola Yuva Shakti<br />Mandal Samiti</b></div>
+          <p>A registered non-political, social &amp; charitable society connecting Amola’s families and driving education, culture, environment and youth empowerment.</p>
+          <div class="footer-social">
+            <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 9h3l.5-3H14V4.5c0-.9.3-1.5 1.6-1.5H18V.2C17.6.1 16.5 0 15.3 0 12.7 0 11 1.6 11 4.2V6H8v3h3v9h3z"/></svg></a>
+            <a href="https://youtube.com" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.7-1.7C19.4 5.2 12 5.2 12 5.2s-7.4 0-8.9.4a2.5 2.5 0 0 0-1.7 1.7C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.7 1.7c1.5.4 8.9.4 8.9.4s7.4 0 8.9-.4a2.5 2.5 0 0 0 1.7-1.7C23 15.2 23 12 23 12zM9.8 15.3V8.7l5.7 3.3z"/></svg></a>
+            <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+          </div>
+        </div>
+        <div class="footer-col"><h4>Explore</h4><ul><li><a href="about.html">About Us</a></li><li><a href="activities.html">Initiatives</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="live.html">Live Programs</a></li><li><a href="news.html">News &amp; Updates</a></li></ul></div>
+        <div class="footer-col"><h4>Get Involved</h4><ul><li><a href="join.html">Join Us</a></li><li><a href="donate.html">Support Us</a></li><li><a href="member.html">Member Login</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+        <div class="footer-col"><h4>Reach Us</h4><ul class="footer-contact">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Village &amp; P.O. Amola, Block Yamkeshwar, Pauri Garhwal, Uttarakhand — 246121</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg><a href="mailto:contact@amolayuvashaktimandalsamiti.org">contact@amolayuvashaktimandalsamiti.org</a></li>
+        </ul></div>
+      </div>
+      <div class="footer-bottom">
+        <span>© <span data-year>2026</span> Amola Yuva Shakti Mandal Samiti · Designed &amp; Managed by <b>YSSAMOLA</b></span>
+        <span class="reg-chip">Reg. No. UK0600872026016193</span>
+      </div>
+    </div>
+  </footer>
+
+  <button id="topBtn" aria-label="Back to top"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+  <script src="main.js"></script>
+  <script>
+    const apiURL = "https://script.google.com/macros/s/AKfycbxG-cxMow1x7R1r_UShOQI6cUtJXCM7ClnKGYXoaYXizjZyiLfEHi825rfcnwaIbOCHww/exec";
+    const adminCode = "mission123@2026";
+    const memberCode = "member@2026";
+    let currentRole = "";
+
+    /* Login tab switch */
+    document.querySelectorAll("[data-login]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const role = btn.dataset.login;
+        document.querySelectorAll("[data-login]").forEach((b) => b.classList.toggle("active", b === btn));
+        document.getElementById("memberTabContent").classList.toggle("active", role === "member");
+        document.getElementById("adminTabContent").classList.toggle("active", role === "admin");
+      });
+    });
+
+    function checkLogin(role) {
+      const code = role === "member"
+        ? document.getElementById("memberCode").value.trim()
+        : document.getElementById("adminCode").value.trim();
+      if ((role === "member" && code === memberCode) || (role === "admin" && code === adminCode)) {
+        currentRole = role;
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("uploadSection").style.display = "block";
+        loadMembers();
+        if (currentRole === "admin") {
+          openTab("mediaTab");
+          loadMedia();
+          document.getElementById("mediaTabBtn").style.display = "";
+        } else {
+          openTab("memberListTab");
+          document.getElementById("mediaTab").classList.remove("active");
+          document.getElementById("mediaTabBtn").style.display = "none";
+        }
+      } else {
+        const msg = document.getElementById(role + "Message");
+        msg.textContent = "Invalid access code!";
+        msg.classList.add("error");
+      }
+    }
+
+    function logoutMember() {
+      currentRole = "";
+      document.getElementById("uploadSection").style.display = "none";
+      document.getElementById("loginSection").style.display = "block";
+      document.getElementById("memberCode").value = "";
+      document.getElementById("adminCode").value = "";
+      document.getElementById("memberMessage").textContent = "";
+      document.getElementById("adminMessage").textContent = "";
+    }
+
+    function openTab(tabId, btn) {
+      document.querySelectorAll("#uploadSection .tab-panel").forEach((t) => t.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
+      if (btn) {
+        document.querySelectorAll("#tabsContainer .tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
+      }
+    }
+
+    function uploadFile() {
+      if (currentRole !== "admin") return;
+      const fileInput = document.getElementById("fileInput");
+      const status = document.getElementById("uploadStatus");
+      status.classList.remove("error");
+      if (fileInput.files.length === 0) { status.textContent = "Please select a file."; status.classList.add("error"); return; }
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const base64Data = e.target.result.split(",")[1];
+        const formData = new URLSearchParams();
+        formData.append("fileName", file.name);
+        formData.append("fileData", base64Data);
+        formData.append("mimeType", file.type);
+        status.textContent = "Uploading…";
+        fetch(apiURL, { method: "POST", body: formData })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) { status.textContent = "Upload successful!"; fileInput.value = ""; loadMedia(); }
+            else { status.textContent = "Upload failed: " + (data.message || "Unknown error"); status.classList.add("error"); }
+          })
+          .catch((err) => { console.error("[v0] upload error", err); status.textContent = "Error uploading file."; status.classList.add("error"); });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function loadMedia() {
+      fetch(apiURL + "?action=getFiles")
+        .then((res) => res.json())
+        .then((files) => {
+          const gallery = document.getElementById("mediaGallery");
+          gallery.innerHTML = "";
+          files.forEach((file) => {
+            const div = document.createElement("div");
+            if (file.type.startsWith("image/")) {
+              const img = document.createElement("img");
+              img.src = "https://lh3.googleusercontent.com/d/" + file.id + "=w800";
+              img.alt = file.name; div.appendChild(img);
+            } else if (file.type.startsWith("video/")) {
+              const iframe = document.createElement("iframe");
+              iframe.src = "https://drive.google.com/file/d/" + file.id + "/preview";
+              iframe.allow = "autoplay; encrypted-media"; div.appendChild(iframe);
+            }
+            const btn = document.createElement("button");
+            btn.textContent = "Delete";
+            btn.onclick = () => deleteMedia(file.id);
+            div.appendChild(btn);
+            gallery.appendChild(div);
+          });
+        })
+        .catch((err) => console.error("[v0] Error loading media:", err));
+    }
+
+    function deleteMedia(fileId) {
+      if (currentRole !== "admin") return;
+      if (confirm("Are you sure you want to delete this file?")) {
+        fetch(apiURL + "?action=deleteFile&fileId=" + fileId, { method: "POST" })
+          .then((res) => res.json())
+          .then((data) => { if (data.success) loadMedia(); else alert("Failed to delete file: " + (data.message || "Unknown error")); })
+          .catch((err) => console.error("[v0] delete error", err));
+      }
+    }
+
+    function loadMembers() {
+      const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQMXTRIOrP0xYcPWd0JoinzcQpxa2v8cjsF40l_QnTlcOchBelbWxX97t33osgrPoHjMMiE6ulMlGbM/pub?output=csv";
+      fetch(csvUrl)
+        .then((res) => res.text())
+        .then((data) => {
+          const rows = data.split("\n").filter((r) => r.trim() !== "");
+          const headers = rows[0].split(",").slice(1);
+          const tableHeader = document.getElementById("memberTableHeader");
+          tableHeader.innerHTML = "<th>S.No</th>";
+          headers.forEach((h) => { tableHeader.innerHTML += "<th>" + h + "</th>"; });
+          const tableBody = document.getElementById("memberTableBody");
+          tableBody.innerHTML = "";
+          const seen = new Set();
+          let serial = 1;
+          for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].split(",").slice(1);
+            if (cells.every((c) => c.trim() === "")) continue;
+            const uniqueKey = cells[0].trim() + "|" + cells[1].trim();
+            if (seen.has(uniqueKey)) continue;
+            seen.add(uniqueKey);
+            const row = document.createElement("tr");
+            row.innerHTML = "<td>" + serial + "</td>";
+            serial++;
+            cells.forEach((c) => { row.innerHTML += "<td>" + c + "</td>"; });
+            tableBody.appendChild(row);
+          }
+        })
+        .catch((err) => console.error("[v0] Error loading members:", err));
+    }
+
+    function filterMembers() {
+      const filter = document.getElementById("memberSearch").value.toUpperCase();
+      const tr = document.getElementById("memberTable").getElementsByTagName("tr");
+      for (let i = 1; i < tr.length; i++) {
+        const tds = tr[i].getElementsByTagName("td");
+        let visible = false;
+        for (const td of tds) { if (td.textContent.toUpperCase().indexOf(filter) > -1) { visible = true; break; } }
+        tr[i].style.display = visible ? "" : "none";
+      }
+    }
+  </script>
+</body>
+</html>
