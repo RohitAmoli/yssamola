@@ -178,6 +178,54 @@
       font-size:.75rem;
     }
 
+
+    /* Persistent meeting chat */
+    .meeting-chat-panel {
+      display:none;
+      flex-direction:column;
+      min-height:210px;
+      max-height:310px;
+      background:#10161d;
+      border-top:1px solid #2a333d;
+      border-bottom:1px solid #2a333d;
+    }
+    .meeting-chat-panel.open { display:flex; }
+    .meeting-chat-head {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:11px 14px; background:#171e27; color:#fff;
+    }
+    .meeting-chat-head strong { font-size:.9rem; }
+    .meeting-chat-head span { color:#9da8b5; font-size:.75rem; }
+    .meeting-chat-messages {
+      flex:1; overflow-y:auto; padding:12px 14px; display:flex;
+      flex-direction:column; gap:9px;
+    }
+    .meeting-chat-empty { color:#8f9aa7; text-align:center; font-size:.82rem; padding:22px 8px; }
+    .meeting-chat-message { max-width:82%; align-self:flex-start; }
+    .meeting-chat-message.mine { align-self:flex-end; }
+    .meeting-chat-meta { color:#8995a2; font-size:.68rem; margin:0 4px 3px; }
+    .meeting-chat-bubble {
+      background:#26313d; color:#fff; padding:8px 11px; border-radius:12px 12px 12px 4px;
+      font-size:.82rem; line-height:1.4; overflow-wrap:anywhere;
+    }
+    .meeting-chat-message.mine .meeting-chat-bubble {
+      background:#315c80; border-radius:12px 12px 4px 12px;
+    }
+    .meeting-chat-form { display:flex; gap:8px; padding:10px; background:#171e27; }
+    .meeting-chat-input {
+      flex:1; min-width:0; border:1px solid #34404c; background:#0d1319; color:#fff;
+      border-radius:20px; padding:9px 13px; outline:none;
+    }
+    .meeting-chat-input:focus { border-color:#6f9fc5; }
+    .meeting-chat-send {
+      width:40px; height:40px; border:0; border-radius:50%; cursor:pointer;
+      background:#3c78a8; color:#fff; font-size:16px;
+    }
+    @media (max-width:640px) {
+      .meeting-chat-panel { max-height:270px; }
+      .meeting-chat-message { max-width:90%; }
+    }
+
     .meeting-controls {
       display:flex;
       justify-content:center;
@@ -523,6 +571,20 @@
               </div>
             </div>
 
+            <div class="meeting-chat-panel" id="meetingChatPanel" aria-live="polite">
+              <div class="meeting-chat-head">
+                <strong>💬 Meeting Chat</strong>
+                <span id="chatMemberStatus">Everyone in this meeting</span>
+              </div>
+              <div class="meeting-chat-messages" id="meetingChatMessages">
+                <div class="meeting-chat-empty" id="chatEmpty">No messages yet. Start the conversation.</div>
+              </div>
+              <form class="meeting-chat-form" id="meetingChatForm">
+                <input class="meeting-chat-input" id="meetingChatInput" type="text" maxlength="500" autocomplete="off" placeholder="Message everyone..." />
+                <button class="meeting-chat-send" type="submit" aria-label="Send message">➤</button>
+              </form>
+            </div>
+
             <div class="meeting-controls">
               <button class="meeting-control" id="micBtn" type="button" aria-label="Microphone">🎙</button>
               <button class="meeting-control" id="cameraBtn" type="button" aria-label="Camera">📹</button>
@@ -749,6 +811,11 @@
       camera: document.getElementById("cameraBtn"),
       screen: document.getElementById("screenBtn"),
       chat: document.getElementById("chatBtn"),
+      chatPanel: document.getElementById("meetingChatPanel"),
+      chatMessages: document.getElementById("meetingChatMessages"),
+      chatEmpty: document.getElementById("chatEmpty"),
+      chatForm: document.getElementById("meetingChatForm"),
+      chatInput: document.getElementById("meetingChatInput"),
       leave: document.getElementById("leaveBtn")
     };
 
@@ -987,7 +1054,14 @@
             if (msg.type === "peer-left") removePeer(msg.id);
 
             if (msg.type === "chat") {
-              showMessage(`${msg.name}: ${msg.text}`);
+              appendChatMessage(msg);
+              openChatPanel();
+            }
+
+            if (msg.type === "chat-history") {
+              clearChatMessages();
+              (msg.messages || []).forEach(appendChatMessage);
+              if ((msg.messages || []).length) openChatPanel();
             }
           } catch (err) {
             console.error(err);
@@ -1029,6 +1103,14 @@
 
     function stopAll() {
       joined = false;
+      els.chatPanel.classList.remove("open");
+      els.chat.setAttribute("aria-expanded", "false");
+      clearChatMessages();
+      const empty = document.createElement("div");
+      empty.className = "meeting-chat-empty";
+      empty.id = "chatEmpty";
+      empty.textContent = "No messages yet. Start the conversation.";
+      els.chatMessages.appendChild(empty);
       peers.forEach((_, id) => removePeer(id));
       if (socket) {
         try { socket.close(); } catch {}
@@ -1120,11 +1202,52 @@
       }
     });
 
+    function openChatPanel() {
+      els.chatPanel.classList.add("open");
+      els.chat.setAttribute("aria-expanded", "true");
+      requestAnimationFrame(() => {
+        els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+      });
+    }
+
+    function clearChatMessages() {
+      els.chatMessages.innerHTML = "";
+    }
+
+    function appendChatMessage(msg) {
+      if (!msg || !msg.text) return;
+      if (els.chatEmpty?.parentNode) els.chatEmpty.remove();
+      const row = document.createElement("div");
+      row.className = "meeting-chat-message" + (msg.id === myId ? " mine" : "");
+      const meta = document.createElement("div");
+      meta.className = "meeting-chat-meta";
+      meta.textContent = msg.id === myId ? "You" : (msg.name || "Member");
+      const bubble = document.createElement("div");
+      bubble.className = "meeting-chat-bubble";
+      bubble.textContent = msg.text;
+      row.append(meta, bubble);
+      els.chatMessages.appendChild(row);
+      els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+    }
+
     els.chat.addEventListener("click", () => {
-      const text = prompt("Message to everyone:");
-      if (text && socket?.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({type:"chat", text:text.trim()}));
+      if (els.chatPanel.classList.contains("open")) {
+        els.chatPanel.classList.remove("open");
+        els.chat.setAttribute("aria-expanded", "false");
+      } else {
+        openChatPanel();
+        els.chatInput.focus();
       }
+    });
+
+    els.chatForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const text = els.chatInput.value.trim();
+      if (!text || socket?.readyState !== WebSocket.OPEN) return;
+      socket.send(JSON.stringify({ type:"chat", text }));
+      els.chatInput.value = "";
+      els.chatInput.focus();
+      openChatPanel();
     });
 
     els.leave.addEventListener("click", () => {
