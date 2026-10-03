@@ -15,6 +15,58 @@ const PORT = process.env.PORT || 8080;
 // Single fixed meeting code. The backend is the source of truth;
 // clients cannot create arbitrary room codes.
 const FIXED_MEETING_CODE = "mission@2026";
+
+// Optional TURN relay configuration. Prefer Metered credential API on Render
+// so TURN credentials do not have to be placed in the website HTML.
+const METERED_DOMAIN = String(process.env.METERED_DOMAIN || "").trim();
+const METERED_API_KEY = String(process.env.METERED_API_KEY || "").trim();
+const METERED_REGION = String(process.env.METERED_REGION || "").trim();
+
+// Static TURN fallback for any TURN provider.
+const TURN_URLS = String(process.env.TURN_URLS || "").split(",").map(s => s.trim()).filter(Boolean);
+const TURN_USERNAME = String(process.env.TURN_USERNAME || "");
+const TURN_CREDENTIAL = String(process.env.TURN_CREDENTIAL || "");
+
+const BASE_ICE_SERVERS = [
+  { urls: "stun:stun.l.google.com:19302" },
+  { urls: "stun:stun1.l.google.com:19302" }
+];
+
+let cachedMeteredIceServers = null;
+let cachedMeteredAt = 0;
+
+async function getIceServers() {
+  // Refresh Metered credentials periodically. This also supports credentials
+  // configured with an expiry time.
+  if (METERED_DOMAIN && METERED_API_KEY) {
+    const now = Date.now();
+    if (cachedMeteredIceServers && now - cachedMeteredAt < 5 * 60 * 1000) {
+      return cachedMeteredIceServers;
+    }
+
+    try {
+      const region = METERED_REGION ? `&region=${encodeURIComponent(METERED_REGION)}` : "";
+      const url = `https://${METERED_DOMAIN}/api/v1/turn/credentials?apiKey=${encodeURIComponent(METERED_API_KEY)}${region}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Metered returned HTTP ${response.status}`);
+      const servers = await response.json();
+      if (Array.isArray(servers) && servers.length) {
+        cachedMeteredIceServers = servers;
+        cachedMeteredAt = now;
+        return servers;
+      }
+    } catch (err) {
+      console.error("TURN credential fetch failed:", err.message);
+    }
+  }
+
+  const servers = [...BASE_ICE_SERVERS];
+  if (TURN_URLS.length && TURN_USERNAME && TURN_CREDENTIAL) {
+    servers.push({ urls: TURN_URLS, username: TURN_USERNAME, credential: TURN_CREDENTIAL });
+  }
+  return servers;
+}
+
 const rooms = new Map(); // room -> { members: Map(clientId -> { ws, name }), chat: [] }
 
 const server = http.createServer((req, res) => {
@@ -52,7 +104,7 @@ wss.on("connection", (ws) => {
     ws
   };
 
-  ws.on("message", raw => {
+  ws.on("message", async raw => {
     let msg;
     try { msg = JSON.parse(raw.toString()); }
     catch { return; }
@@ -87,7 +139,8 @@ wss.on("connection", (ws) => {
       client.name = name;
       room.members.set(client.id, client);
 
-      send(ws, { type:"welcome", id:client.id, room:roomCode });
+      const iceServers = await getIceServers();
+      send(ws, { type:"welcome", id:client.id, room:roomCode, iceServers });
       send(ws, { type:"chat-history", messages:room.chat });
 
       // Tell existing members that the newcomer is here.
