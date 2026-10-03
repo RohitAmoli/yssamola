@@ -1064,7 +1064,7 @@
       showMessage("Connecting to the meeting...");
       try {
         await connectSignaling();
-        showMessage(`Joined room ${roomCode}. Waiting for other members...`);
+        showMessage(`Joined room. Waiting for other members...`);
         localStorage.setItem("yssamolaMeetingName", name);
         localStorage.setItem("yssamolaMeetingCode", roomCode);
       } catch (err) {
