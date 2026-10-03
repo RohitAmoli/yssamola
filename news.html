@@ -480,11 +480,9 @@
         <a href="join.html">Join</a>
         <a href="contact.html">Contact</a>
         <a href="member.html">Login</a>
-      
-        
 
         <!-- Active member meeting page -->
-        <a href="news.html" class="news-link">Meeting Room</a>
+        <a href="member-meeting.html" class="news-link">Member Meeting</a>
 
         <a href="donate.html" class="btn btn-accent drawer-only">Support Us</a>
       </div>
@@ -580,7 +578,7 @@
 
               <div class="meeting-divider"></div>
 
-              <button class="meeting-btn meeting-btn-accent" id="startMeetingBtn" type="button">
+              <button class="meeting-btn meeting-btn-accent" id="startMeetingBtn" type="button" style="display:none" aria-hidden="true">
                 ＋ Create New Meeting
               </button>
 
@@ -619,7 +617,11 @@
           </article>
         </div>
 
-        
+        <div class="meeting-note">
+          <strong>Important:</strong>
+          This page needs the included WebSocket signaling server. WebRTC carries the actual audio/video;
+          the signaling server only helps browsers find each other.
+        </div>
       </div>
     </section>
   </main>
@@ -795,9 +797,12 @@
     let roomCode = "";
     let myId = "";
     let joined = false;
-    const peers = new Map(); // peerId -> { pc, name, tile, video, mic }
+    const peers = new Map(); // peerId -> { pc, name, tile, video, mic, pendingCandidates: [] }
 
-    const iceServers = [
+    // STUN helps with normal NAT traversal. TURN is required when two
+    // members are behind restrictive/symmetric NATs or firewalls.
+    // The backend can send TURN servers in the welcome message.
+    let iceServers = [
       { urls: "stun:stun.l.google.com:19302" },
       { urls: "stun:stun1.l.google.com:19302" }
     ];
@@ -912,7 +917,7 @@
 
       const pc = new RTCPeerConnection({ iceServers });
       const tile = createPeerTile(peerId, name);
-      const item = { pc, name, ...tile };
+      const item = { pc, name, ...tile, pendingCandidates: [], remoteDescriptionSet: false };
       peers.set(peerId, item);
 
       if (localStream) {
@@ -941,8 +946,26 @@
         }
       };
 
+      pc.oniceconnectionstatechange = () => {
+        console.log("YSSAMOLA ICE", peerId, pc.iceConnectionState);
+        if (pc.iceConnectionState === "failed") {
+          showMessage("Member connection failed. Trying the network relay...");
+        }
+      };
+
+      pc.onicecandidateerror = event => {
+        console.warn("YSSAMOLA ICE candidate error", peerId, event.errorCode, event.errorText);
+      };
+
       pc.onconnectionstatechange = () => {
-        if (["failed","closed"].includes(pc.connectionState)) removePeer(peerId);
+        console.log("YSSAMOLA connection", peerId, pc.connectionState);
+        if (pc.connectionState === "connected") {
+          showMessage("Member connected successfully.");
+        }
+        // Do not immediately destroy a failed peer. Browsers can recover
+        // after ICE restart/network changes; keep the tile visible while
+        // diagnostics are available in the browser console.
+        if (pc.connectionState === "closed") removePeer(peerId);
       };
 
       if (initiator) {
@@ -952,6 +975,16 @@
       }
 
       return item;
+    }
+
+    async function applyRemoteDescription(item, description) {
+      await item.pc.setRemoteDescription(description);
+      item.remoteDescriptionSet = true;
+      const queued = item.pendingCandidates.splice(0);
+      for (const candidate of queued) {
+        try { await item.pc.addIceCandidate(candidate); }
+        catch (err) { console.warn("Queued ICE candidate failed", err); }
+      }
     }
 
     function connectSignaling() {
@@ -983,6 +1016,15 @@
 
             if (msg.type === "welcome") {
               myId = msg.id;
+              if (Array.isArray(msg.iceServers) && msg.iceServers.length) {
+                iceServers = msg.iceServers;
+                const hasTurn = iceServers.some(server =>
+                  String(server.urls || "").includes("turn:") || String(server.urls || "").includes("turns:") ||
+                  (Array.isArray(server.urls) && server.urls.some(u => String(u).startsWith("turn")))
+                );
+                if (hasTurn) console.log("YSSAMOLA TURN relay configured");
+                else console.warn("YSSAMOLA TURN is not configured on the backend");
+              }
               joined = true;
               setStatus("LIVE", true);
               els.title.textContent = `YSSAMOLA Member Meeting · ${roomCode}`;
@@ -1000,7 +1042,7 @@
 
             if (msg.type === "offer") {
               const item = await makePeer(msg.from, msg.name, false);
-              await item.pc.setRemoteDescription(msg.offer);
+              await applyRemoteDescription(item, msg.offer);
               const answer = await item.pc.createAnswer();
               await item.pc.setLocalDescription(answer);
               socket.send(JSON.stringify({
@@ -1010,13 +1052,20 @@
 
             if (msg.type === "answer") {
               const item = peers.get(msg.from);
-              if (item) await item.pc.setRemoteDescription(msg.answer);
+              if (item) await applyRemoteDescription(item, msg.answer);
             }
 
             if (msg.type === "candidate") {
               const item = peers.get(msg.from);
               if (item && msg.candidate) {
-                try { await item.pc.addIceCandidate(msg.candidate); } catch {}
+                // Candidates can arrive before the remote SDP. Queue them
+                // until setRemoteDescription() has completed.
+                if (!item.remoteDescriptionSet) {
+                  item.pendingCandidates.push(msg.candidate);
+                } else {
+                  try { await item.pc.addIceCandidate(msg.candidate); }
+                  catch (err) { console.warn("addIceCandidate failed", err); }
+                }
               }
             }
 
@@ -1060,8 +1109,8 @@
       showMessage("Connecting to the meeting...");
       try {
         await connectSignaling();
-        showMessage(`Joined room. Waiting for other members...`);
- 
+        showMessage(`Joined room ${roomCode}. Waiting for other members...`);
+        localStorage.setItem("yssamolaMeetingName", name);
       } catch (err) {
         // Keep the camera preview alive even if the signaling server is
         // not running. This makes the problem visible instead of turning
@@ -1101,11 +1150,9 @@
       join(els.code.value);
     });
 
-    els.start.addEventListener("click", () => {
-      const code = "AMOLA-" + Math.random().toString(36).slice(2, 8).toUpperCase();
-      els.code.value = code;
-      join(code);
-    });
+    // New meeting codes are intentionally disabled. The backend accepts only
+    // the official fixed meeting code, so the page never generates or saves one.
+    els.start.disabled = true;
 
     els.test.addEventListener("click", async () => {
       if (localStream) {
@@ -1236,7 +1283,9 @@
 
     window.addEventListener("beforeunload", stopAll);
 
-  
+    // Restore the member name only. Never pre-fill or persist the meeting code.
+    els.name.value = localStorage.getItem("yssamolaMeetingName") || "";
+    els.code.value = "";
   })();
   </script>
 
