@@ -6,7 +6,6 @@
   <meta name="theme-color" content="#0b2c1c" />
   <title>Member Meeting — Amola Yuva Shakti Mandal Samiti</title>
   <meta name="description" content="Member meeting and online meeting access for Amola Yuva Shakti Mandal Samiti." />
-  <meta name="meeting-build" content="webrtc-final-2026-10-03" />
   <link rel="icon" href="assets/img/IMG-20250911-WA0007.jpg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -435,6 +434,21 @@
     .meeting-controls{gap:7px}
     .meeting-control{width:44px;height:44px}
   }
+
+  .meeting-chat{display:none;background:#fff;border-top:1px solid #2b333d}
+  .meeting-chat.open{display:flex;flex-direction:column;height:340px}
+  .meeting-chat__head{display:flex;justify-content:space-between;align-items:center;padding:12px 15px;background:#171d24;color:#fff;font-size:.9rem}
+  .meeting-chat__head span{font-size:.72rem;color:#b8c2cc}
+  .meeting-chat__messages{flex:1;overflow:auto;padding:12px;background:#0f151b}
+  .meeting-chat__message{margin:0 0 10px;max-width:86%;padding:8px 10px;border-radius:10px;background:#25303a;color:#fff}
+  .meeting-chat__message.mine{margin-left:auto;background:#174f35}
+  .meeting-chat__message strong{display:block;font-size:.72rem;color:#f4a51c;margin-bottom:3px}
+  .meeting-chat__message p{margin:0;font-size:.84rem;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+  .meeting-chat__message time{display:block;margin-top:4px;font-size:.62rem;color:#aeb8c1}
+  .meeting-chat__empty{color:#9da8b2;text-align:center;font-size:.82rem;padding:25px 10px}
+  .meeting-chat__form{display:flex;gap:8px;padding:10px;background:#171d24}
+  .meeting-chat__form input{min-width:0;flex:1;padding:10px 12px;border:1px solid #3a444f;border-radius:8px;background:#222a33;color:#fff;outline:none;font:inherit}
+  .meeting-chat__form button{border:0;border-radius:8px;padding:0 15px;background:var(--saffron-500,#f4a51c);color:#111;font-weight:700;cursor:pointer}
 </style>
 
 </head>
@@ -530,6 +544,18 @@
               <button class="meeting-control" id="screenBtn" type="button" aria-label="Screen sharing">🖥</button>
               <button class="meeting-control" id="chatBtn" type="button" aria-label="Chat">💬</button>
               <button class="meeting-control end" id="leaveBtn" type="button" aria-label="Leave meeting">☎</button>
+            </div>
+
+            <div class="meeting-chat" id="chatPanel" aria-hidden="true">
+              <div class="meeting-chat__head">
+                <strong>Meeting Chat</strong>
+                <span id="chatCount">0 messages</span>
+              </div>
+              <div class="meeting-chat__messages" id="chatMessages" aria-live="polite"></div>
+              <form class="meeting-chat__form" id="chatForm">
+                <input id="chatInput" type="text" maxlength="500" placeholder="Message everyone…" autocomplete="off" />
+                <button type="submit" aria-label="Send message">Send</button>
+              </form>
             </div>
           </div>
 
@@ -771,7 +797,7 @@
     let roomCode = "";
     let myId = "";
     let joined = false;
-    const peers = new Map(); // peerId -> { pc, name, tile, video, mic, pendingCandidates: [] }
+    const peers = new Map(); // peerId -> { pc, name, tile, video, mic }
 
     const iceServers = [
       { urls: "stun:stun.l.google.com:19302" },
@@ -819,6 +845,15 @@
           audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true },
           video: { facingMode:"user", width:{ideal:1280}, height:{ideal:720} }
         });
+
+        // Safety/default state: join with camera and microphone OFF.
+        localStream.getAudioTracks().forEach(track => track.enabled = false);
+        localStream.getVideoTracks().forEach(track => track.enabled = false);
+        els.mic.textContent = "🔇";
+        els.camera.textContent = "🚫";
+        els.mic.classList.add("active");
+        els.camera.classList.add("active");
+
         els.localName.textContent = els.name.value.trim() || "You";
         els.localVideo.srcObject = localStream;
         els.localVideo.classList.add("active");
@@ -879,7 +914,7 @@
 
       const pc = new RTCPeerConnection({ iceServers });
       const tile = createPeerTile(peerId, name);
-      const item = { pc, name, ...tile, pendingCandidates: [] };
+      const item = { pc, name, ...tile };
       peers.set(peerId, item);
 
       if (localStream) {
@@ -887,31 +922,16 @@
       }
 
       pc.ontrack = event => {
-        console.log("[WebRTC] remote track received:", peerId, event.track.kind);
-
-        let stream = event.streams && event.streams[0];
+        let stream = event.streams?.[0];
         if (!stream) {
-          stream = item.video.srcObject instanceof MediaStream
-            ? item.video.srcObject
-            : new MediaStream();
-          if (!stream.getTracks().includes(event.track)) {
-            stream.addTrack(event.track);
-          }
+          stream = item.video.srcObject || new MediaStream();
+          if (!item.video.srcObject) item.video.srcObject = stream;
+          stream.addTrack(event.track);
         }
-
-        item.video.srcObject = stream;
-        item.video.muted = false;
-        item.video.autoplay = true;
-        item.video.playsInline = true;
-        item.video.classList.add("active");
-        item.tile.querySelector(".person-avatar").style.display = "none";
-
-        const playPromise = item.video.play();
-        if (playPromise) {
-          playPromise.catch(err => {
-            console.warn("[WebRTC] remote video autoplay/play blocked:", err);
-            showMessage(`Remote video received from ${name || "member"}, but browser blocked playback. Tap the meeting page and allow media playback.`);
-          });
+        if (item.video.srcObject !== stream) item.video.srcObject = stream;
+        item.video.play().catch(() => {});
+        if (event.track.kind === "video" && event.track.enabled) {
+          item.tile.querySelector(".person-avatar").style.display = "none";
         }
       };
 
@@ -924,24 +944,7 @@
       };
 
       pc.onconnectionstatechange = () => {
-        console.log("[WebRTC]", peerId, "connectionState:", pc.connectionState);
-        if (pc.connectionState === "connected") {
-          showMessage(`${name || "Member"} connected — live video/audio should now appear.`);
-        } else if (pc.connectionState === "connecting") {
-          showMessage(`Connecting video/audio to ${name || "member"}...`);
-        } else if (pc.connectionState === "failed") {
-          showMessage(`WebRTC connection to ${name || "member"} failed. Check network/permissions.`);
-        } else if (pc.connectionState === "disconnected") {
-          showMessage(`${name || "Member"} temporarily disconnected.`);
-        }
-      };
-
-      pc.oniceconnectionstatechange = () => {
-        console.log("[WebRTC]", peerId, "iceConnectionState:", pc.iceConnectionState);
-      };
-
-      pc.onicecandidateerror = event => {
-        console.warn("[WebRTC] ICE candidate error", peerId, event);
+        if (["failed","closed"].includes(pc.connectionState)) removePeer(peerId);
       };
 
       if (initiator) {
@@ -973,6 +976,13 @@
           try { msg = JSON.parse(event.data); } catch { return; }
 
           try {
+            if (msg.type === "join-rejected") {
+              joined = false;
+              showMessage(msg.reason || "Invalid meeting code.");
+              try { socket.close(); } catch {}
+              return;
+            }
+
             if (msg.type === "welcome") {
               myId = msg.id;
               joined = true;
@@ -993,12 +1003,6 @@
             if (msg.type === "offer") {
               const item = await makePeer(msg.from, msg.name, false);
               await item.pc.setRemoteDescription(msg.offer);
-
-              // Apply ICE candidates that arrived before the offer.
-              for (const candidate of item.pendingCandidates.splice(0)) {
-                try { await item.pc.addIceCandidate(candidate); } catch {}
-              }
-
               const answer = await item.pc.createAnswer();
               await item.pc.setLocalDescription(answer);
               socket.send(JSON.stringify({
@@ -1008,32 +1012,25 @@
 
             if (msg.type === "answer") {
               const item = peers.get(msg.from);
-              if (item) {
-                await item.pc.setRemoteDescription(msg.answer);
-
-                // Apply ICE candidates that arrived before the answer.
-                for (const candidate of item.pendingCandidates.splice(0)) {
-                  try { await item.pc.addIceCandidate(candidate); } catch {}
-                }
-              }
+              if (item) await item.pc.setRemoteDescription(msg.answer);
             }
 
             if (msg.type === "candidate") {
               const item = peers.get(msg.from);
-              if (!item || !msg.candidate) return;
-
-              // ICE candidates can arrive before the remote SDP.
-              if (item.pc.remoteDescription) {
+              if (item && msg.candidate) {
                 try { await item.pc.addIceCandidate(msg.candidate); } catch {}
-              } else {
-                item.pendingCandidates.push(msg.candidate);
               }
             }
 
             if (msg.type === "peer-left") removePeer(msg.id);
 
             if (msg.type === "chat") {
-              showMessage(`${msg.name}: ${msg.text}`);
+              receiveChatMessage({id:msg.id, name:msg.name, text:msg.text, time:msg.time});
+            }
+
+            if (msg.type === "chat-history") {
+              chatHistory = Array.isArray(msg.messages) ? msg.messages : [];
+              renderChatHistory();
             }
           } catch (err) {
             console.error(err);
@@ -1076,7 +1073,7 @@
         setStatus("CAMERA READY");
         showMessage(
           "Your camera and microphone are working, but the meeting server could not be reached. " +
-          "Please check the deployed meeting server: wss://yssamola1.onrender.com"
+          "Start server.js on this computer (port 8080), or use the deployed WSS server."
         );
         console.error("Meeting signaling error:", err);
       }
@@ -1176,11 +1173,63 @@
       }
     });
 
-    els.chat.addEventListener("click", () => {
-      const text = prompt("Message to everyone:");
-      if (text && socket?.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({type:"chat", text:text.trim()}));
+    const chatPanel = document.getElementById("chatPanel");
+    const chatMessages = document.getElementById("chatMessages");
+    const chatForm = document.getElementById("chatForm");
+    const chatInput = document.getElementById("chatInput");
+    const chatCount = document.getElementById("chatCount");
+    let chatHistory = [];
+
+    function renderChatHistory() {
+      chatMessages.innerHTML = "";
+      if (!chatHistory.length) {
+        const empty = document.createElement("div");
+        empty.className = "meeting-chat__empty";
+        empty.textContent = "No messages yet. Start the conversation.";
+        chatMessages.appendChild(empty);
+      } else {
+        chatHistory.forEach(addChatMessage);
       }
+      chatCount.textContent = `${chatHistory.length} message${chatHistory.length === 1 ? "" : "s"}`;
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addChatMessage(message) {
+      const el = document.createElement("div");
+      el.className = "meeting-chat__message" + (message.id === myId ? " mine" : "");
+      const strong = document.createElement("strong");
+      strong.textContent = message.name || "Member";
+      const p = document.createElement("p");
+      p.textContent = message.text || "";
+      const time = document.createElement("time");
+      time.textContent = message.time ? new Date(message.time).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"}) : "";
+      el.append(strong, p, time);
+      chatMessages.appendChild(el);
+    }
+
+    function receiveChatMessage(message) {
+      const empty = chatMessages.querySelector(".meeting-chat__empty");
+      if (empty) empty.remove();
+      chatHistory.push(message);
+      addChatMessage(message);
+      chatCount.textContent = `${chatHistory.length} message${chatHistory.length === 1 ? "" : "s"}`;
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    els.chat.addEventListener("click", () => {
+      const open = chatPanel.classList.toggle("open");
+      chatPanel.setAttribute("aria-hidden", String(!open));
+      els.chat.classList.toggle("active", open);
+      if (open) { renderChatHistory(); chatInput.focus(); }
+    });
+
+    chatForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const text = chatInput.value.trim();
+      if (!text || socket?.readyState !== WebSocket.OPEN) return;
+      socket.send(JSON.stringify({type:"chat", text}));
+      chatInput.value = "";
+      chatInput.focus();
     });
 
     els.leave.addEventListener("click", () => {
