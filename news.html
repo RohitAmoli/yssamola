@@ -732,10 +732,16 @@
     // Signaling address:
     // - Production HTTPS site: use WSS on the same host, with /meeting-ws
     // - Local testing (http://localhost or file://): use ws://localhost:8080
-    const SIGNALING_URL =
-      location.protocol === "https:"
-        ? `wss://${location.host}/meeting-ws`
-        : `ws://localhost:8080`;
+    // =========================================================
+    // ONLINE MEETING SERVER
+    // After you deploy server.js, put its address here.
+    //
+    // Example:
+    // const SIGNALING_URL = "wss://yssamola1.onrender.com";
+    //
+    // For now, local testing uses localhost.
+    // =========================================================
+    const SIGNALING_URL = "ws://localhost:8080";
 
     const els = {
       form: document.getElementById("joinMeetingForm"),
