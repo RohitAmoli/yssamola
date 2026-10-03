@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#0b2c1c" />
   <title>Member Meeting — Amola Yuva Shakti Mandal Samiti</title>
   <meta name="description" content="Member meeting and online meeting access for Amola Yuva Shakti Mandal Samiti." />
+  <meta name="meeting-build" content="webrtc-final-2026-10-03" />
   <link rel="icon" href="assets/img/IMG-20250911-WA0007.jpg" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -886,11 +887,31 @@
       }
 
       pc.ontrack = event => {
-        const [stream] = event.streams;
-        if (stream && item.video.srcObject !== stream) {
-          item.video.srcObject = stream;
-          item.video.play().catch(() => {});
-          item.tile.querySelector(".person-avatar").style.display = "none";
+        console.log("[WebRTC] remote track received:", peerId, event.track.kind);
+
+        let stream = event.streams && event.streams[0];
+        if (!stream) {
+          stream = item.video.srcObject instanceof MediaStream
+            ? item.video.srcObject
+            : new MediaStream();
+          if (!stream.getTracks().includes(event.track)) {
+            stream.addTrack(event.track);
+          }
+        }
+
+        item.video.srcObject = stream;
+        item.video.muted = false;
+        item.video.autoplay = true;
+        item.video.playsInline = true;
+        item.video.classList.add("active");
+        item.tile.querySelector(".person-avatar").style.display = "none";
+
+        const playPromise = item.video.play();
+        if (playPromise) {
+          playPromise.catch(err => {
+            console.warn("[WebRTC] remote video autoplay/play blocked:", err);
+            showMessage(`Remote video received from ${name || "member"}, but browser blocked playback. Tap the meeting page and allow media playback.`);
+          });
         }
       };
 
@@ -903,7 +924,24 @@
       };
 
       pc.onconnectionstatechange = () => {
-        if (["failed","closed"].includes(pc.connectionState)) removePeer(peerId);
+        console.log("[WebRTC]", peerId, "connectionState:", pc.connectionState);
+        if (pc.connectionState === "connected") {
+          showMessage(`${name || "Member"} connected — live video/audio should now appear.`);
+        } else if (pc.connectionState === "connecting") {
+          showMessage(`Connecting video/audio to ${name || "member"}...`);
+        } else if (pc.connectionState === "failed") {
+          showMessage(`WebRTC connection to ${name || "member"} failed. Check network/permissions.`);
+        } else if (pc.connectionState === "disconnected") {
+          showMessage(`${name || "Member"} temporarily disconnected.`);
+        }
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        console.log("[WebRTC]", peerId, "iceConnectionState:", pc.iceConnectionState);
+      };
+
+      pc.onicecandidateerror = event => {
+        console.warn("[WebRTC] ICE candidate error", peerId, event);
       };
 
       if (initiator) {
@@ -1038,7 +1076,7 @@
         setStatus("CAMERA READY");
         showMessage(
           "Your camera and microphone are working, but the meeting server could not be reached. " +
-          "Start server.js on this computer (port 8080), or use the deployed WSS server."
+          "Please check the deployed meeting server: wss://yssamola1.onrender.com"
         );
         console.error("Meeting signaling error:", err);
       }
