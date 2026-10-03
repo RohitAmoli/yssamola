@@ -12,3 +12,15 @@
     "vite": "^5.4.10"
   }
 }
+
+{
+  "name": "yssamola-member-meeting",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

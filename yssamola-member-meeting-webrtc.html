@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b2c1c" />
+  <title>Member Meeting — Amola Yuva Shakti Mandal Samiti</title>
+  <meta name="description" content="Member meeting and online meeting access for Amola Yuva Shakti Mandal Samiti." />
+  <link rel="icon" href="assets/img/IMG-20250911-WA0007.jpg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Mukta:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- IMPORTANT: this is the same stylesheet used by your original website -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    /* =========================================================
+       MEMBER MEETING PAGE
+       Header / navigation remain the same as the original site.
+       ========================================================= */
+
+    .meeting-hero {
+      background:
+        linear-gradient(135deg, rgba(11,44,28,.88), rgba(11,44,28,.60)),
+        var(--hero-img) center/cover no-repeat;
+      color: #fff;
+      padding: 76px 0 70px;
+    }
+
+    .meeting-hero .kicker {
+      display:inline-block;
+      color:#fff;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.20);
+      border-radius:999px;
+      padding:7px 14px;
+      font-size:.78rem;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    .meeting-hero h1 {
+      margin:16px 0 10px;
+      font-family:'Fraunces',serif;
+      font-size:clamp(2.4rem,5vw,4.3rem);
+      line-height:1.05;
+    }
+
+    .meeting-hero h1 em { color:#f4a51c; font-style:normal; }
+
+    .meeting-hero p {
+      max-width:690px;
+      margin:0;
+      color:rgba(255,255,255,.86);
+      font-size:1.08rem;
+      line-height:1.7;
+    }
+
+    .meeting-section { padding:56px 0 72px; }
+
+    .meeting-layout {
+      display:grid;
+      grid-template-columns:minmax(0,1.45fr) minmax(300px,.55fr);
+      gap:28px;
+      align-items:start;
+    }
+
+    .meeting-window {
+      overflow:hidden;
+      border-radius:var(--radius);
+      background:#10151b;
+      box-shadow:var(--shadow-lg);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .meeting-window__top {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:15px;
+      padding:13px 17px;
+      color:#e8edf2;
+      font-size:.82rem;
+      background:#171d24;
+    }
+
+    .meeting-live {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:5px 10px;
+      border-radius:999px;
+      background:#b42318;
+      color:#fff;
+      font-size:.72rem;
+      font-weight:700;
+      letter-spacing:.04em;
+    }
+
+    .meeting-live i {
+      width:7px;
+      height:7px;
+      display:block;
+      border-radius:50%;
+      background:#fff;
+      animation:meetingPulse 1.3s infinite;
+    }
+
+    @keyframes meetingPulse {
+      50% { opacity:.35; transform:scale(.75); }
+    }
+
+    .meeting-grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:7px;
+      padding:8px;
+      background:#0b0f14;
+    }
+
+    .meeting-person {
+      min-height:205px;
+      position:relative;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:10px;
+      background:linear-gradient(145deg,#303947,#181e27);
+    }
+
+    .meeting-person:nth-child(2) { background:linear-gradient(145deg,#263a50,#171d2a); }
+    .meeting-person:nth-child(3) { background:linear-gradient(145deg,#40334b,#1c1925); }
+    .meeting-person:nth-child(4) { background:linear-gradient(145deg,#294338,#151f1a); }
+
+    .person-avatar {
+      width:70px;
+      height:70px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      font-weight:700;
+      font-size:1.1rem;
+      background:linear-gradient(135deg,#efaa82,#c75c68);
+      box-shadow:0 8px 25px rgba(0,0,0,.30);
+    }
+
+    .meeting-person:nth-child(2) .person-avatar { background:linear-gradient(135deg,#86c9ef,#5265bb); }
+    .meeting-person:nth-child(3) .person-avatar { background:linear-gradient(135deg,#d39be8,#7c4a9c); }
+    .meeting-person:nth-child(4) .person-avatar { background:linear-gradient(135deg,#91d6a3,#318458); }
+
+    .person-name {
+      position:absolute;
+      left:10px;
+      bottom:10px;
+      color:#fff;
+      padding:4px 9px;
+      border-radius:6px;
+      background:rgba(0,0,0,.52);
+      font-size:.76rem;
+    }
+
+    .person-mic {
+      position:absolute;
+      right:9px;
+      bottom:9px;
+      width:28px;
+      height:28px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      background:rgba(0,0,0,.50);
+      color:#fff;
+      font-size:.75rem;
+    }
+
+    .meeting-controls {
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:9px;
+      padding:14px;
+      background:#171d24;
+    }
+
+    .meeting-control {
+      width:38px;
+      height:38px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      background:#2b333d;
+      border:0;
+      font-size:14px;
+    }
+
+    .meeting-control.end {
+      width:48px;
+      border-radius:20px;
+      background:#d92d20;
+    }
+
+    .meeting-side {
+      display:grid;
+      gap:18px;
+    }
+
+    .meeting-card {
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:26px;
+      box-shadow:var(--shadow-sm);
+    }
+
+    .meeting-card h2 {
+      margin:0 0 8px;
+      font-family:'Fraunces',serif;
+      font-size:1.65rem;
+    }
+
+    .meeting-card > p {
+      color:var(--body);
+      line-height:1.65;
+      font-size:.92rem;
+      margin:0 0 18px;
+    }
+
+    .meeting-form {
+      display:grid;
+      gap:10px;
+    }
+
+    .meeting-input {
+      width:100%;
+      padding:13px 14px;
+      border:1px solid var(--line);
+      border-radius:var(--radius-sm);
+      background:#fff;
+      color:var(--body);
+      outline:none;
+      font:inherit;
+    }
+
+    .meeting-input:focus {
+      border-color:var(--forest-500);
+      box-shadow:0 0 0 3px var(--forest-tint);
+    }
+
+    .meeting-btn {
+      width:100%;
+      border:0;
+      border-radius:var(--radius-sm);
+      padding:12px 16px;
+      cursor:pointer;
+      font:600 .92rem 'Poppins',sans-serif;
+      transition:transform .2s, box-shadow .2s;
+    }
+
+    .meeting-btn:hover {
+      transform:translateY(-2px);
+      box-shadow:var(--shadow-sm);
+    }
+
+    .meeting-btn-primary {
+      color:#fff;
+      background:var(--forest-600);
+    }
+
+    .meeting-btn-accent {
+      color:#fff;
+      background:var(--saffron-500);
+    }
+
+    .meeting-divider {
+      height:1px;
+      background:var(--line);
+      margin:20px 0;
+    }
+
+    .meeting-info {
+      list-style:none;
+      display:grid;
+      gap:10px;
+      margin:0;
+      padding:0;
+    }
+
+    .meeting-info li {
+      display:flex;
+      align-items:center;
+      gap:9px;
+      color:var(--body);
+      font-size:.86rem;
+    }
+
+    .meeting-info-icon {
+      width:28px;
+      height:28px;
+      flex:0 0 28px;
+      display:grid;
+      place-items:center;
+      border-radius:50%;
+      background:var(--forest-tint);
+      color:var(--forest-700);
+      font-size:.75rem;
+    }
+
+    .meeting-features {
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:20px;
+      margin-top:28px;
+    }
+
+    .meeting-feature {
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-left:5px solid var(--forest-500);
+      border-radius:var(--radius);
+      padding:23px;
+      box-shadow:var(--shadow-sm);
+      transition:transform .25s, box-shadow .25s;
+    }
+
+    .meeting-feature:nth-child(2) { border-left-color:var(--saffron-500); }
+    .meeting-feature:nth-child(3) { border-left-color:#7b61c9; }
+
+    .meeting-feature:hover {
+      transform:translateY(-4px);
+      box-shadow:var(--shadow-lg);
+    }
+
+    .meeting-feature h3 {
+      margin:0 0 7px;
+      font-family:'Fraunces',serif;
+      font-size:1.25rem;
+    }
+
+    .meeting-feature p {
+      margin:0;
+      color:var(--body);
+      font-size:.88rem;
+      line-height:1.65;
+    }
+
+    .meeting-note {
+      margin-top:25px;
+      padding:15px 18px;
+      border-radius:var(--radius-sm);
+      background:var(--forest-tint);
+      color:var(--forest-700);
+      font-size:.83rem;
+      line-height:1.6;
+    }
+
+    @media (max-width:900px) {
+      .meeting-layout { grid-template-columns:1fr; }
+      .meeting-features { grid-template-columns:1fr; }
+    }
+
+    @media (max-width:600px) {
+      .meeting-hero { padding:50px 0; }
+      .meeting-section { padding:38px 0 50px; }
+      .meeting-grid { grid-template-columns:1fr 1fr; }
+      .meeting-person { min-height:145px; }
+      .person-avatar { width:55px; height:55px; }
+      .meeting-window__top { font-size:.72rem; }
+    }
+  </style>
+
+<style>
+  .meeting-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:10px;
+    padding:10px;
+    min-height:420px;
+    background:#0b1015;
+  }
+  .meeting-person{
+    position:relative;
+    min-height:180px;
+    overflow:hidden;
+    border-radius:12px;
+    background:#202832;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+  }
+  .meeting-person video{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    background:#202832;
+  }
+  .person-avatar{
+    width:68px;height:68px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--forest-700,#164c32);
+    color:#fff;font-weight:700;font-size:1.05rem;
+    position:relative;z-index:2;
+  }
+  .local-person .person-avatar{display:flex}
+  .local-person video.active + .person-avatar{display:none}
+  .person-name{
+    position:absolute;left:10px;bottom:10px;z-index:4;
+    background:rgba(0,0,0,.58);padding:5px 9px;border-radius:7px;
+    font-size:.78rem;color:#fff;
+  }
+  .person-mic{
+    position:absolute;right:10px;bottom:10px;z-index:4;
+    background:rgba(0,0,0,.58);padding:5px 7px;border-radius:7px;
+  }
+  .meeting-permission{font-size:.82rem;line-height:1.5;margin:12px 0 0;color:var(--muted,#65756d)}
+  .meeting-btn-secondary{margin-top:10px}
+  .meeting-control.active{outline:2px solid var(--saffron-500,#f4a51c)}
+  .meeting-live{white-space:nowrap}
+  @media(max-width:900px){
+    .meeting-layout{grid-template-columns:1fr}
+    .meeting-grid{min-height:300px;grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media(max-width:520px){
+    .meeting-grid{grid-template-columns:1fr 1fr;padding:6px;gap:6px}
+    .meeting-person{min-height:145px}
+    .meeting-controls{gap:7px}
+    .meeting-control{width:44px;height:44px}
+  }
+</style>
+
+</head>
+
+<body>
+
+  <!-- SAME HEADER STRUCTURE AS YOUR ORIGINAL HTML -->
+  <header class="site-header">
+    <nav class="nav container" aria-label="Main navigation">
+
+      <a class="brand" href="index.html">
+        <img
+          class="brand__logo"
+          src="assets/img/IMG-20250911-WA0007.jpg"
+          alt="Amola Yuva Shakti Mandal Samiti logo"
+        />
+        <span class="brand__text">
+          <span class="brand__name">Amola Yuva Shakti</span>
+          <span class="brand__tag">Mandal Samiti</span>
+        </span>
+      </a>
+
+      <div class="nav-links" id="navLinks">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="activities.html">Initiatives</a>
+        <a href="live.html">Live</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="join.html">Join</a>
+        <a href="contact.html">Contact</a>
+        <a href="member.html">Login</a>
+
+        <!-- Active member meeting page -->
+        <a href="member-meeting.html" class="news-link">Member Meeting</a>
+
+        <a href="donate.html" class="btn btn-accent drawer-only">Support Us</a>
+      </div>
+
+      <div class="nav-actions">
+        <a href="donate.html" class="btn btn-accent">Support Us</a>
+        <button class="nav-toggle" aria-label="Toggle menu" aria-controls="navLinks">
+          <span></span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <div class="nav-backdrop"></div>
+
+  <main>
+
+    <!-- Meeting hero -->
+    <section
+      class="meeting-hero"
+      style="--hero-img:url('assets/img/slide3.png')"
+    >
+      <div class="container">
+        <span class="kicker">Member Meeting</span>
+
+        <h1>Connect with <em>our members</em></h1>
+
+        <p>
+          Join online member meetings, discuss village initiatives,
+          share ideas and stay connected with Amola Yuva Shakti Mandal Samiti.
+        </p>
+      </div>
+    </section>
+
+
+    <!-- Meeting area -->
+    <section class="section meeting-section">
+      <div class="container">
+        <div class="meeting-layout">
+
+          <div class="meeting-window" id="meetingWindow">
+            <div class="meeting-window__top">
+              <span id="meetingTitle">Amola Yuva Shakti Mandal Samiti · Member Meeting</span>
+              <span class="meeting-live" id="meetingStatus"><i></i> READY</span>
+            </div>
+
+            <div class="meeting-grid" id="videoGrid">
+              <div class="meeting-person local-person" id="localTile">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="person-avatar" id="localAvatar">YOU</div>
+                <span class="person-name" id="localName">You</span>
+                <span class="person-mic" id="localMic">🎙</span>
+              </div>
+            </div>
+
+            <div class="meeting-controls">
+              <button class="meeting-control" id="micBtn" type="button" aria-label="Microphone">🎙</button>
+              <button class="meeting-control" id="cameraBtn" type="button" aria-label="Camera">📹</button>
+              <button class="meeting-control" id="screenBtn" type="button" aria-label="Screen sharing">🖥</button>
+              <button class="meeting-control" id="chatBtn" type="button" aria-label="Chat">💬</button>
+              <button class="meeting-control end" id="leaveBtn" type="button" aria-label="Leave meeting">☎</button>
+            </div>
+          </div>
+
+          <div class="meeting-side">
+
+            <div class="meeting-card">
+              <h2>Join Member Meeting</h2>
+              <p>Enter your name and the meeting code. Your camera and microphone will only be requested after you press Join.</p>
+
+              <form class="meeting-form" id="joinMeetingForm">
+                <input id="memberName" class="meeting-input" type="text"
+                       placeholder="Your name" autocomplete="name" maxlength="40" required />
+                <input id="meetingCode" class="meeting-input" type="text"
+                       placeholder="Meeting code, e.g. AMOLA123" autocomplete="off"
+                       autocapitalize="characters" maxlength="32" required />
+                <button class="meeting-btn meeting-btn-primary" type="submit">
+                  Join Meeting →
+                </button>
+              </form>
+
+              <div class="meeting-divider"></div>
+
+              <button class="meeting-btn meeting-btn-accent" id="startMeetingBtn" type="button">
+                ＋ Create New Meeting
+              </button>
+
+              <button class="meeting-btn meeting-btn-secondary" id="testMediaBtn" type="button">
+                Test Camera &amp; Mic
+              </button>
+
+              <p class="meeting-permission" id="permissionMessage" role="status"></p>
+            </div>
+
+            <div class="meeting-card">
+              <h2>Meeting Features</h2>
+              <ul class="meeting-info">
+                <li><span class="meeting-info-icon">🎙</span> Live audio &amp; video</li>
+                <li><span class="meeting-info-icon">👥</span> Multiple members on one screen</li>
+                <li><span class="meeting-info-icon">🖥</span> Screen sharing</li>
+                <li><span class="meeting-info-icon">🔒</span> Room-based connection</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="meeting-features">
+          <article class="meeting-feature">
+            <h3>Real Member Video</h3>
+            <p>When members join the same room, their live camera tiles are added automatically.</p>
+          </article>
+          <article class="meeting-feature">
+            <h3>Talk Normally</h3>
+            <p>Microphone audio is exchanged directly between browsers using WebRTC.</p>
+          </article>
+          <article class="meeting-feature">
+            <h3>Mobile Friendly</h3>
+            <p>Camera and microphone permission is requested from a button press, which is required by mobile browsers.</p>
+          </article>
+        </div>
+
+        <div class="meeting-note">
+          <strong>Important:</strong>
+          This page needs the included WebSocket signaling server. WebRTC carries the actual audio/video;
+          the signaling server only helps browsers find each other.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- SAME FOOTER STRUCTURE AS YOUR ORIGINAL HTML -->
+  <footer class="site-footer">
+    <div class="container">
+
+      <div class="footer-grid">
+
+        <div class="footer-col">
+
+          <div class="footer-brand">
+            <img src="assets/img/IMG-20250911-WA0007.jpg" alt="Logo" />
+            <b>Amola Yuva Shakti<br />Mandal Samiti</b>
+          </div>
+
+          <p>
+            A registered non-political, social &amp; charitable society
+            connecting Amola’s families and driving education, culture,
+            environment and youth empowerment.
+          </p>
+
+          <div class="footer-social">
+            <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14 9h3l.5-3H14V4.5c0-.9.3-1.5 1.6-1.5H18V.2C17.6.1 16.5 0 15.3 0 12.7 0 11 1.6 11 4.2V6H8v3h3v9h3z"/>
+              </svg>
+            </a>
+
+            <a href="https://youtube.com" target="_blank" rel="noopener" aria-label="YouTube">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23 12s0-3.2-.4-4.7a2.5 2.5 0 0 0-1.7-1.7C19.4 5.2 12 5.2 12 5.2s-7.4 0-8.9.4a2.5 2.5 0 0 0-1.7 1.7C1 8.8 1 12 1 12s0 3.2.4 4.7a2.5 2.5 0 0 0 1.7 1.7c1.5.4 8.9.4 8.9.4s7.4 0 8.9-.4a2.5 2.5 0 0 0 1.7-1.7C23 15.2 23 12 23 12zM9.8 15.3V8.7l5.7 3.3z"/>
+              </svg>
+            </a>
+
+            <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="5"/>
+                <circle cx="12" cy="12" r="4"/>
+                <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+            </a>
+          </div>
+
+        </div>
+
+        <div class="footer-col">
+          <h4>Explore</h4>
+          <ul>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="activities.html">Initiatives</a></li>
+            <li><a href="gallery.html">Gallery</a></li>
+            <li><a href="live.html">Live Programs</a></li>
+            <li><a href="news.html">News &amp; Updates</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Get Involved</h4>
+          <ul>
+            <li><a href="join.html">Join Us</a></li>
+            <li><a href="donate.html">Support Us</a></li>
+            <li><a href="member.html">Member Login</a></li>
+            <li><a href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Reach Us</h4>
+
+          <ul class="footer-contact">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              <span>
+                Village &amp; P.O. Amola, Block Yamkeshwar,
+                Pauri Garhwal, Uttarakhand — 246121
+              </span>
+            </li>
+
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="m22 7-10 5L2 7"/>
+              </svg>
+
+              <a href="mailto:contact@amolayuvashaktimandalsamiti.org">
+                contact@amolayuvashaktimandalsamiti.org
+              </a>
+            </li>
+          </ul>
+
+        </div>
+
+      </div>
+
+      <div class="footer-bottom">
+        <span>
+          © <span data-year>2026</span> Amola Yuva Shakti Mandal Samiti
+          · Designed &amp; Managed by <b>YSSAMOLA</b>
+        </span>
+
+        <span class="reg-chip">
+          Reg. No. UK0600872026016193
+        </span>
+      </div>
+
+    </div>
+  </footer>
+
+  <button id="topBtn" aria-label="Back to top">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 19V5M5 12l7-7 7 7"/>
+    </svg>
+  </button>
+
+  <!-- Your original main.js -->
+  <script src="main.js"></script>
+
+
+  <script>
+  (() => {
+    /*
+      YSSAMOLA REAL-TIME MEMBER MEETING
+      --------------------------------
+      Audio/video: WebRTC
+      Signaling: WebSocket server in server.js
+      IMPORTANT:
+      - In production HTTPS pages should use WSS.
+      - Set SIGNALING_URL to your deployed WSS endpoint.
+    */
+    // Signaling address:
+    // - Production HTTPS site: use WSS on the same host, with /meeting-ws
+    // - Local testing (http://localhost or file://): use ws://localhost:8080
+    const SIGNALING_URL =
+      location.protocol === "https:"
+        ? `wss://${location.host}/meeting-ws`
+        : `ws://localhost:8080`;
+
+    const els = {
+      form: document.getElementById("joinMeetingForm"),
+      name: document.getElementById("memberName"),
+      code: document.getElementById("meetingCode"),
+      start: document.getElementById("startMeetingBtn"),
+      test: document.getElementById("testMediaBtn"),
+      msg: document.getElementById("permissionMessage"),
+      grid: document.getElementById("videoGrid"),
+      localVideo: document.getElementById("localVideo"),
+      localAvatar: document.getElementById("localAvatar"),
+      localName: document.getElementById("localName"),
+      localMic: document.getElementById("localMic"),
+      status: document.getElementById("meetingStatus"),
+      title: document.getElementById("meetingTitle"),
+      mic: document.getElementById("micBtn"),
+      camera: document.getElementById("cameraBtn"),
+      screen: document.getElementById("screenBtn"),
+      chat: document.getElementById("chatBtn"),
+      leave: document.getElementById("leaveBtn")
+    };
+
+    let socket = null;
+    let localStream = null;
+    let screenStream = null;
+    let roomCode = "";
+    let myId = "";
+    let joined = false;
+    const peers = new Map(); // peerId -> { pc, name, tile, video, mic }
+
+    const iceServers = [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" }
+    ];
+
+    function showMessage(text) {
+      els.msg.textContent = text || "";
+    }
+
+    function setStatus(text, live = false) {
+      els.status.innerHTML = live ? `<i></i> ${text}` : text;
+    }
+
+    function initials(name) {
+      return String(name || "YOU").trim().split(/\s+/).slice(0,2)
+        .map(x => x[0]?.toUpperCase() || "").join("") || "YOU";
+    }
+
+    function mediaErrorMessage(err) {
+      if (!window.isSecureContext && location.hostname !== "localhost") {
+        return "Camera/mic needs HTTPS. Open the meeting through your https:// website.";
+      }
+      if (err?.name === "NotAllowedError" || err?.name === "SecurityError") {
+        return "Camera/mic permission was blocked. Allow Camera and Microphone for this website in your browser settings, then try again.";
+      }
+      if (err?.name === "NotFoundError") {
+        return "No camera or microphone was found on this device.";
+      }
+      if (err?.name === "NotReadableError") {
+        return "The camera or microphone is already being used by another app.";
+      }
+      return "Could not access camera/microphone: " + (err?.message || err?.name || "unknown error");
+    }
+
+    async function getMedia() {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("getUserMedia is not available in this browser.");
+        }
+        if (!window.isSecureContext && location.hostname !== "localhost") {
+          throw new DOMException("HTTPS required", "SecurityError");
+        }
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true },
+          video: { facingMode:"user", width:{ideal:1280}, height:{ideal:720} }
+        });
+        els.localName.textContent = els.name.value.trim() || "You";
+        els.localVideo.srcObject = localStream;
+        els.localVideo.classList.add("active");
+        els.localAvatar.style.display = "none";
+
+        // Some browsers need an explicit play() after a stream is attached.
+        try { await els.localVideo.play(); } catch {}
+
+        showMessage("Camera and microphone are ready.");
+        return true;
+      } catch (err) {
+        showMessage(mediaErrorMessage(err));
+        return false;
+      }
+    }
+
+    function addLocalPlaceholder() {
+      els.localVideo.classList.remove("active");
+      els.localAvatar.style.display = "flex";
+    }
+
+    function createPeerTile(peerId, name) {
+      const tile = document.createElement("div");
+      tile.className = "meeting-person";
+      tile.id = `peer-${peerId}`;
+
+      const video = document.createElement("video");
+      video.autoplay = true;
+      video.playsInline = true;
+
+      const avatar = document.createElement("div");
+      avatar.className = "person-avatar";
+      avatar.textContent = initials(name);
+
+      const label = document.createElement("span");
+      label.className = "person-name";
+      label.textContent = name || "Member";
+
+      const mic = document.createElement("span");
+      mic.className = "person-mic";
+      mic.textContent = "🎙";
+
+      tile.append(video, avatar, label, mic);
+      els.grid.appendChild(tile);
+      return { tile, video, mic };
+    }
+
+    function removePeer(peerId) {
+      const item = peers.get(peerId);
+      if (!item) return;
+      try { item.pc.close(); } catch {}
+      item.tile?.remove();
+      peers.delete(peerId);
+    }
+
+    async function makePeer(peerId, name, initiator) {
+      if (peers.has(peerId)) return peers.get(peerId);
+
+      const pc = new RTCPeerConnection({ iceServers });
+      const tile = createPeerTile(peerId, name);
+      const item = { pc, name, ...tile };
+      peers.set(peerId, item);
+
+      if (localStream) {
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+      }
+
+      pc.ontrack = event => {
+        const [stream] = event.streams;
+        if (stream && item.video.srcObject !== stream) {
+          item.video.srcObject = stream;
+          item.tile.querySelector(".person-avatar").style.display = "none";
+        }
+      };
+
+      pc.onicecandidate = event => {
+        if (event.candidate && socket?.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type:"candidate", to:peerId, candidate:event.candidate
+          }));
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        if (["failed","closed"].includes(pc.connectionState)) removePeer(peerId);
+      };
+
+      if (initiator) {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.send(JSON.stringify({type:"offer", to:peerId, offer}));
+      }
+
+      return item;
+    }
+
+    function connectSignaling() {
+      return new Promise((resolve, reject) => {
+        socket = new WebSocket(SIGNALING_URL);
+
+        socket.onopen = () => {
+          socket.send(JSON.stringify({
+            type:"join", room:roomCode, name:els.name.value.trim()
+          }));
+        };
+
+        socket.onerror = () => reject(new Error("Could not connect to meeting server at " + SIGNALING_URL));
+        socket.onclose = () => {
+          if (joined) showMessage("Meeting server connection closed.");
+        };
+
+        socket.onmessage = async event => {
+          let msg;
+          try { msg = JSON.parse(event.data); } catch { return; }
+
+          try {
+            if (msg.type === "welcome") {
+              myId = msg.id;
+              joined = true;
+              setStatus("LIVE", true);
+              els.title.textContent = `YSSAMOLA Member Meeting · ${roomCode}`;
+              resolve();
+            }
+
+            if (msg.type === "existing-peer") {
+              await makePeer(msg.id, msg.name, true);
+            }
+
+            if (msg.type === "peer-joined") {
+              // The newcomer creates the offer, so the existing peer waits.
+              await makePeer(msg.id, msg.name, false);
+            }
+
+            if (msg.type === "offer") {
+              const item = await makePeer(msg.from, msg.name, false);
+              await item.pc.setRemoteDescription(msg.offer);
+              const answer = await item.pc.createAnswer();
+              await item.pc.setLocalDescription(answer);
+              socket.send(JSON.stringify({
+                type:"answer", to:msg.from, answer
+              }));
+            }
+
+            if (msg.type === "answer") {
+              const item = peers.get(msg.from);
+              if (item) await item.pc.setRemoteDescription(msg.answer);
+            }
+
+            if (msg.type === "candidate") {
+              const item = peers.get(msg.from);
+              if (item && msg.candidate) {
+                try { await item.pc.addIceCandidate(msg.candidate); } catch {}
+              }
+            }
+
+            if (msg.type === "peer-left") removePeer(msg.id);
+
+            if (msg.type === "chat") {
+              showMessage(`${msg.name}: ${msg.text}`);
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        };
+      });
+    }
+
+    async function join(room) {
+      if (joined) return;
+
+      const name = els.name.value.trim();
+      roomCode = String(room || "").trim().replace(/\s+/g, "").toUpperCase();
+
+      if (!name) {
+        showMessage("Please enter your name.");
+        els.name.focus();
+        return;
+      }
+      if (!roomCode) {
+        showMessage("Please enter a meeting code.");
+        els.code.focus();
+        return;
+      }
+
+      const ok = await getMedia();
+      if (!ok) return;
+
+      showMessage("Connecting to the meeting...");
+      try {
+        await connectSignaling();
+        showMessage(`Joined room ${roomCode}. Waiting for other members...`);
+        localStorage.setItem("yssamolaMeetingName", name);
+        localStorage.setItem("yssamolaMeetingCode", roomCode);
+      } catch (err) {
+        // Keep the camera preview alive even if the signaling server is
+        // not running. This makes the problem visible instead of turning
+        // the whole meeting window blank.
+        joined = false;
+        setStatus("CAMERA READY");
+        showMessage(
+          "Your camera and microphone are working, but the meeting server could not be reached. " +
+          "Start server.js on this computer (port 8080), or use the deployed WSS server."
+        );
+        console.error("Meeting signaling error:", err);
+      }
+    }
+
+    function stopAll() {
+      joined = false;
+      peers.forEach((_, id) => removePeer(id));
+      if (socket) {
+        try { socket.close(); } catch {}
+        socket = null;
+      }
+      if (screenStream) {
+        screenStream.getTracks().forEach(t => t.stop());
+        screenStream = null;
+      }
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+      }
+      els.localVideo.srcObject = null;
+      addLocalPlaceholder();
+      setStatus("READY");
+    }
+
+    els.form.addEventListener("submit", e => {
+      e.preventDefault();
+      join(els.code.value);
+    });
+
+    els.start.addEventListener("click", () => {
+      const code = "AMOLA-" + Math.random().toString(36).slice(2, 8).toUpperCase();
+      els.code.value = code;
+      join(code);
+    });
+
+    els.test.addEventListener("click", async () => {
+      if (localStream) {
+        showMessage("Camera and microphone are already active.");
+        return;
+      }
+      els.name.value = els.name.value || localStorage.getItem("yssamolaMeetingName") || "";
+      await getMedia();
+    });
+
+    els.mic.addEventListener("click", () => {
+      const track = localStream?.getAudioTracks()[0];
+      if (!track) return showMessage("Join the meeting first.");
+      track.enabled = !track.enabled;
+      els.mic.textContent = track.enabled ? "🎙" : "🔇";
+      els.localMic.textContent = track.enabled ? "🎙" : "🔇";
+      els.mic.classList.toggle("active", !track.enabled);
+    });
+
+    els.camera.addEventListener("click", () => {
+      const track = localStream?.getVideoTracks()[0];
+      if (!track) return showMessage("Join the meeting first.");
+      track.enabled = !track.enabled;
+      els.camera.textContent = track.enabled ? "📹" : "🚫";
+      els.camera.classList.toggle("active", !track.enabled);
+      if (track.enabled) {
+        els.localVideo.classList.add("active");
+        els.localAvatar.style.display = "none";
+      } else {
+        els.localVideo.classList.remove("active");
+        els.localAvatar.style.display = "flex";
+      }
+    });
+
+    els.screen.addEventListener("click", async () => {
+      if (!localStream) return showMessage("Join the meeting first.");
+      if (!navigator.mediaDevices?.getDisplayMedia) {
+        return showMessage("Screen sharing is not supported by this browser.");
+      }
+
+      try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({video:true});
+        const screenTrack = screenStream.getVideoTracks()[0];
+
+        peers.forEach(({pc}) => {
+          const sender = pc.getSenders().find(s => s.track?.kind === "video");
+          if (sender) sender.replaceTrack(screenTrack);
+        });
+
+        els.localVideo.srcObject = screenStream;
+        screenTrack.onended = async () => {
+          const cameraTrack = localStream.getVideoTracks()[0];
+          peers.forEach(({pc}) => {
+            const sender = pc.getSenders().find(s => s.track?.kind === "video");
+            if (sender) sender.replaceTrack(cameraTrack);
+          });
+          els.localVideo.srcObject = localStream;
+          screenStream = null;
+        };
+      } catch (err) {
+        showMessage("Screen sharing was cancelled or blocked.");
+      }
+    });
+
+    els.chat.addEventListener("click", () => {
+      const text = prompt("Message to everyone:");
+      if (text && socket?.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({type:"chat", text:text.trim()}));
+      }
+    });
+
+    els.leave.addEventListener("click", () => {
+      stopAll();
+      showMessage("You left the meeting.");
+    });
+
+    window.addEventListener("beforeunload", stopAll);
+
+    // Restore previous name/code for convenience.
+    els.name.value = localStorage.getItem("yssamolaMeetingName") || "";
+    els.code.value = localStorage.getItem("yssamolaMeetingCode") || "";
+  })();
+  </script>
+
+
+
+
+</body>
+</html>
