@@ -741,7 +741,7 @@
     //
     // For now, local testing uses localhost.
     // =========================================================
-    const SIGNALING_URL = "ws://localhost:8080";
+    const SIGNALING_URL = "wss://yssamola1.onrender.com";
 
     const els = {
       form: document.getElementById("joinMeetingForm"),
@@ -770,7 +770,7 @@
     let roomCode = "";
     let myId = "";
     let joined = false;
-    const peers = new Map(); // peerId -> { pc, name, tile, video, mic }
+    const peers = new Map(); // peerId -> { pc, name, tile, video, mic, pendingCandidates: [] }
 
     const iceServers = [
       { urls: "stun:stun.l.google.com:19302" },
@@ -878,7 +878,7 @@
 
       const pc = new RTCPeerConnection({ iceServers });
       const tile = createPeerTile(peerId, name);
-      const item = { pc, name, ...tile };
+      const item = { pc, name, ...tile, pendingCandidates: [] };
       peers.set(peerId, item);
 
       if (localStream) {
@@ -889,6 +889,7 @@
         const [stream] = event.streams;
         if (stream && item.video.srcObject !== stream) {
           item.video.srcObject = stream;
+          item.video.play().catch(() => {});
           item.tile.querySelector(".person-avatar").style.display = "none";
         }
       };
@@ -954,6 +955,12 @@
             if (msg.type === "offer") {
               const item = await makePeer(msg.from, msg.name, false);
               await item.pc.setRemoteDescription(msg.offer);
+
+              // Apply ICE candidates that arrived before the offer.
+              for (const candidate of item.pendingCandidates.splice(0)) {
+                try { await item.pc.addIceCandidate(candidate); } catch {}
+              }
+
               const answer = await item.pc.createAnswer();
               await item.pc.setLocalDescription(answer);
               socket.send(JSON.stringify({
@@ -963,13 +970,25 @@
 
             if (msg.type === "answer") {
               const item = peers.get(msg.from);
-              if (item) await item.pc.setRemoteDescription(msg.answer);
+              if (item) {
+                await item.pc.setRemoteDescription(msg.answer);
+
+                // Apply ICE candidates that arrived before the answer.
+                for (const candidate of item.pendingCandidates.splice(0)) {
+                  try { await item.pc.addIceCandidate(candidate); } catch {}
+                }
+              }
             }
 
             if (msg.type === "candidate") {
               const item = peers.get(msg.from);
-              if (item && msg.candidate) {
+              if (!item || !msg.candidate) return;
+
+              // ICE candidates can arrive before the remote SDP.
+              if (item.pc.remoteDescription) {
                 try { await item.pc.addIceCandidate(msg.candidate); } catch {}
+              } else {
+                item.pendingCandidates.push(msg.candidate);
               }
             }
 
