@@ -1061,8 +1061,7 @@
       try {
         await connectSignaling();
         showMessage(`Joined room. Waiting for other members...`);
-        localStorage.setItem("yssamolaMeetingName", name);
-        localStorage.setItem("yssamolaMeetingCode", roomCode);
+ 
       } catch (err) {
         // Keep the camera preview alive even if the signaling server is
         // not running. This makes the problem visible instead of turning
@@ -1237,9 +1236,7 @@
 
     window.addEventListener("beforeunload", stopAll);
 
-    // Restore previous name/code for convenience.
-    els.name.value = localStorage.getItem("yssamolaMeetingName") || "";
-    els.code.value = localStorage.getItem("yssamolaMeetingCode") || "";
+  
   })();
   </script>
 
