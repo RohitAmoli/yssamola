@@ -484,6 +484,125 @@
   }
 </style>
 
+
+<style>
+/* ===== Improved Meeting Controls ===== */
+.meeting-controls{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:14px;
+  padding:18px 16px 20px;
+  background:linear-gradient(180deg,#111820 0%,#0b1015 100%);
+  border-top:1px solid rgba(255,255,255,.08);
+  box-sizing:border-box;
+  position:relative;
+  overflow:visible;
+  z-index:30;
+}
+
+.meeting-control{
+  position:relative;
+  width:58px;
+  height:58px;
+  min-width:58px;
+  border:2px solid rgba(255,255,255,.12);
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  margin:0;
+  background:#26313b;
+  color:#fff;
+  font-size:24px;
+  line-height:1;
+  cursor:pointer;
+  box-shadow:0 5px 14px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.08);
+  transition:transform .18s ease, filter .18s ease, box-shadow .18s ease, background .18s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.meeting-control::after{
+  content:attr(aria-label);
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 10px);
+  top:auto;
+  transform:translateX(-50%) translateY(4px);
+  background:#071018;
+  color:#fff;
+  padding:5px 9px;
+  border-radius:6px;
+  font-size:11px;
+  font-weight:600;
+  line-height:1.2;
+  white-space:nowrap;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .15s ease, transform .15s ease;
+  z-index:9999;
+  box-shadow:0 4px 12px rgba(0,0,0,.3);
+}
+
+@media (hover:hover) and (pointer:fine){
+  .meeting-control:hover{
+    transform:translateY(-3px) scale(1.05);
+    filter:brightness(1.12);
+    box-shadow:0 8px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  .meeting-control:hover::after{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+}
+
+.meeting-control:focus-visible{
+  outline:3px solid #f4a51c;
+  outline-offset:3px;
+}
+
+/* Individual button colors */
+#micBtn{background:linear-gradient(145deg,#2878d8,#1455a3);}
+#cameraBtn{background:linear-gradient(145deg,#1ca86a,#087447);}
+#screenBtn{background:linear-gradient(145deg,#7c55d9,#4d2aa8);}
+#chatBtn{background:linear-gradient(145deg,#e4a52a,#bd7410);}
+.meeting-control.end{background:linear-gradient(145deg,#e94b4b,#b51f2b);}
+
+/* Active / disabled states */
+.meeting-control.active{
+  border-color:#f4a51c;
+  box-shadow:0 0 0 3px rgba(244,165,28,.22), 0 7px 18px rgba(0,0,0,.35);
+}
+.meeting-control:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+  transform:none;
+  filter:grayscale(.25);
+}
+
+@media (max-width:600px){
+  .meeting-controls{
+    gap:10px;
+    padding:14px 8px 18px;
+  }
+  .meeting-control{
+    width:50px;
+    height:50px;
+    min-width:50px;
+    font-size:21px;
+  }
+  .meeting-control::after{display:none;}
+}
+
+@media (max-width:380px){
+  .meeting-controls{gap:7px;padding-left:5px;padding-right:5px;}
+  .meeting-control{width:46px;height:46px;min-width:46px;font-size:19px;}
+}
+</style>
+
 </head>
 
 <body>
