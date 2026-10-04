@@ -1010,6 +1010,7 @@
     let recordingAudioContext = null;
     let recordingAudioDestination = null;
     let recordingAudioSources = [];
+    let recordingStopRequested = false;
 
     let iceServers = [
       { urls: "stun:stun.l.google.com:19302" },
@@ -1353,6 +1354,176 @@
       }
     }
 
+    function drawMeetingRecordingFrame() {
+      if (!recordingCanvas || !recordingCtx) return;
+
+      const root = document.getElementById("meetingWindow");
+      if (!root) return;
+      const rect = root.getBoundingClientRect();
+      const W = recordingCanvas.width;
+      const H = recordingCanvas.height;
+      const scaleX = W / Math.max(1, rect.width);
+      const scaleY = H / Math.max(1, rect.height);
+      const ctx = recordingCtx;
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.scale(scaleX, scaleY);
+
+      // Meeting background.
+      ctx.fillStyle = "#111820";
+      ctx.fillRect(0, 0, rect.width, rect.height);
+
+      // Header.
+      ctx.fillStyle = "#17212b";
+      ctx.fillRect(0, 0, rect.width, 46);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "600 13px Poppins, Arial, sans-serif";
+      ctx.fillText("Amola Yuva Shakti Mandal Samiti · Member Meeting", 16, 28);
+
+      // LIVE indicator.
+      ctx.beginPath();
+      ctx.fillStyle = "#b51f2a";
+      ctx.roundRect(Math.max(16, rect.width - 102), 9, 86, 28, 14);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "700 10px Poppins, Arial, sans-serif";
+      ctx.fillText("●  LIVE", Math.max(27, rect.width - 92), 27);
+
+      const grid = document.getElementById("videoGrid");
+      const tiles = grid ? [...grid.querySelectorAll(".meeting-person")] : [];
+      const top = 56;
+      const bottom = 64;
+      const gap = 8;
+      const availableH = Math.max(180, rect.height - top - bottom);
+      const cols = Math.max(1, Math.min(4, Math.ceil(Math.sqrt(Math.max(1, tiles.length)))));
+      const rows = Math.max(1, Math.ceil(Math.max(1, tiles.length) / cols));
+      const tileW = (rect.width - gap * (cols + 1)) / cols;
+      const tileH = (availableH - gap * (rows + 1)) / rows;
+
+      const roundRect = (x,y,w,h,r,fill,stroke) => {
+        ctx.beginPath();
+        ctx.roundRect(x,y,w,h,r);
+        if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+        if (stroke) { ctx.strokeStyle = stroke; ctx.stroke(); }
+      };
+
+      const drawCover = (video, x, y, w, h) => {
+        if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return false;
+        const vw = video.videoWidth, vh = video.videoHeight;
+        const scale = Math.max(w / vw, h / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = x + (w - dw) / 2, dy = y + (h - dh) / 2;
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(x,y,w,h,10);
+        ctx.clip();
+        ctx.drawImage(video, dx, dy, dw, dh);
+        ctx.restore();
+        return true;
+      };
+
+      tiles.forEach((tile, index) => {
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const x = gap + col * (tileW + gap);
+        const y = top + gap + row * (tileH + gap);
+        roundRect(x,y,tileW,tileH,10,"#202b35","rgba(255,255,255,.08)");
+
+        const video = tile.querySelector("video");
+        const hasVideo = drawCover(video, x, y, tileW, tileH);
+        if (!hasVideo) {
+          const avatar = tile.querySelector(".person-avatar");
+          const letter = (avatar?.textContent || tile.querySelector(".person-name")?.textContent || "M").trim().charAt(0).toUpperCase() || "M";
+          ctx.fillStyle = "#354552";
+          ctx.beginPath();
+          ctx.arc(x + tileW/2, y + tileH/2 - 4, Math.min(34, tileH*.18), 0, Math.PI*2);
+          ctx.fill();
+          ctx.fillStyle = "#fff";
+          ctx.font = "700 28px Poppins, Arial, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(letter, x + tileW/2, y + tileH/2 + 6);
+          ctx.textAlign = "left";
+        }
+
+        const name = tile.querySelector(".person-name")?.textContent?.trim() || "Member";
+        roundRect(x+8, y+tileH-34, Math.min(tileW-16, 170), 25, 8, "rgba(0,0,0,.62)");
+        ctx.fillStyle = "#fff";
+        ctx.font = "600 10px Poppins, Arial, sans-serif";
+        ctx.fillText(name.slice(0,26), x+16, y+tileH-18);
+      });
+
+      // Bottom controls.
+      const controls = ["🎙", "📹", "🖥", "💬", "☎"];
+      const controlW = 42, controlGap = 9;
+      const total = controls.length*controlW + (controls.length-1)*controlGap;
+      let cx = (rect.width-total)/2;
+      controls.forEach((icon,i) => {
+        ctx.beginPath();
+        ctx.fillStyle = i === 4 ? "#c62828" : "#26343f";
+        ctx.arc(cx + controlW/2, rect.height-24, controlW/2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.font = "17px Arial";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#fff";
+        ctx.fillText(icon, cx+controlW/2, rect.height-18);
+        cx += controlW + controlGap;
+      });
+      ctx.textAlign = "left";
+
+      // Recording indicator.
+      roundRect(14, 54, 92, 24, 8, "rgba(170,20,30,.92)");
+      ctx.fillStyle = "#fff";
+      ctx.font = "700 9px Poppins, Arial, sans-serif";
+      ctx.fillText("● RECORDING", 23, 70);
+
+      // Always render chat history into the recording when messages exist.
+      const chatMessages = [...document.querySelectorAll("#meetingChatMessages .meeting-chat-message")];
+      if (chatMessages.length) {
+        const panelW = Math.min(330, Math.max(250, rect.width * 0.30));
+        const px = rect.width - panelW - 12, py = 54, ph = Math.max(120, rect.height - 112);
+        roundRect(px,py,panelW,ph,12,"rgba(13,20,27,.97)");
+        ctx.fillStyle = "#fff";
+        ctx.font = "700 12px Poppins, Arial, sans-serif";
+        ctx.fillText("💬 Meeting Chat",px+14,py+22);
+        ctx.fillStyle = "#9da8b5";
+        ctx.font = "600 9px Poppins, Arial, sans-serif";
+        ctx.textAlign = "right";
+        ctx.fillText("History",px+panelW-14,py+22);
+        ctx.textAlign = "left";
+        const rows = chatMessages.slice(-35);
+        let cy = py + 46;
+        rows.forEach(row => {
+          if (cy > py + ph - 34) return;
+          const meta = row.querySelector(".meeting-chat-meta")?.textContent || "Member";
+          const msgText = row.querySelector(".meeting-chat-bubble")?.textContent || "";
+          const mine = row.classList.contains("mine");
+          ctx.fillStyle = mine ? "#f4a51c" : "#9aa7b4";
+          ctx.font = "600 8px Poppins, Arial, sans-serif";
+          ctx.fillText(meta.slice(0,32),px+14,cy);
+          cy += 12;
+          const maxChars = Math.max(24, Math.floor((panelW-28)/6.2));
+          const words = String(msgText).split(/\s+/), lines = [];
+          let line = "";
+          for (const word of words) {
+            const test = line ? line + " " + word : word;
+            if (test.length > maxChars && line) { lines.push(line); line = word; }
+            else line = test;
+          }
+          if (line) lines.push(line);
+          const shown = lines.slice(0,3), bh = shown.length*12+10;
+          roundRect(px+10,cy-8,panelW-20,bh,8,mine?"#315c80":"#26313d");
+          ctx.fillStyle = "#fff";
+          ctx.font = "500 8.5px Poppins, Arial, sans-serif";
+          shown.forEach((ln,j) => ctx.fillText(ln,px+18,cy+1+j*12));
+          cy += bh+8;
+        });
+      }
+
+      ctx.restore();
+      recordingAnimationFrame = requestAnimationFrame(drawMeetingRecordingFrame);
+    }
+
     async function startRecording() {
       if (!joined) {
         showMessage("Join the meeting first.");
@@ -1376,6 +1547,7 @@
         recordingCtx = recordingCanvas.getContext("2d");
         recordingStartedAt = Date.now();
         recordingChunks = [];
+        recordingStopRequested = false;
 
         const videoStream = recordingCanvas.captureStream(30);
         recordingStream = videoStream;
@@ -1391,6 +1563,10 @@
 
         mediaRecorder.onstop = () => {
           cancelAnimationFrame(recordingAnimationFrame);
+          if (!recordingStopRequested) {
+            recordingChunks = [];
+            return;
+          }
           recordingAnimationFrame = 0;
           const finalMime = mimeType || "video/webm";
           const blob = new Blob(recordingChunks, { type: finalMime });
@@ -1433,6 +1609,7 @@
 
     function stopRecording() {
       if (!mediaRecorder || mediaRecorder.state === "inactive") return;
+      recordingStopRequested = true;
       mediaRecorder.stop();
       cancelAnimationFrame(recordingAnimationFrame);
       recordingAnimationFrame = 0;
