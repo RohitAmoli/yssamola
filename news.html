@@ -486,6 +486,42 @@
 
 
 <style>
+/* ===== Separate Recording Control ===== */
+.meeting-record-dock.is-hidden{display:none;}
+.meeting-record-dock{
+  position:relative;
+  z-index:31;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:12px 16px 14px;
+  background:linear-gradient(180deg,#161d25,#0e141a);
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.meeting-record-dock__label{
+  color:#f3f6f8; font-size:12px; font-weight:800; letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.meeting-record-main{
+  position:relative; display:inline-flex; align-items:center; justify-content:center; gap:9px;
+  min-width:168px; min-height:48px; padding:10px 18px; border:2px solid rgba(255,255,255,.16);
+  border-radius:999px; cursor:pointer; color:#fff;
+  background:linear-gradient(145deg,#ef5350,#b71c1c);
+  box-shadow:0 6px 16px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.12);
+  font-size:14px; font-weight:800; transition:transform .18s ease,filter .18s ease,box-shadow .18s ease;
+}
+.meeting-record-main__icon{font-size:20px; line-height:1;}
+.meeting-record-main:hover{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 9px 20px rgba(0,0,0,.36);}
+.meeting-record-main:focus-visible{outline:3px solid #f4a51c;outline-offset:3px;}
+.meeting-record-main.recording{background:linear-gradient(145deg,#ff1744,#8e0e24);animation:recordPulse 1.15s ease-in-out infinite;}
+.meeting-record-dock small{color:#9eabb5;font-size:11px;text-align:center;}
+@media(max-width:600px){
+  .meeting-record-dock{padding:10px 10px 12px;}
+  .meeting-record-main{min-width:156px;min-height:46px;font-size:13px;}
+}
+
 /* ===== Improved Meeting Controls ===== */
 .meeting-controls{
   width:100%;
@@ -569,6 +605,11 @@
 #cameraBtn{background:linear-gradient(145deg,#1ca86a,#087447);}
 #screenBtn{background:linear-gradient(145deg,#7c55d9,#4d2aa8);}
 #chatBtn{background:linear-gradient(145deg,#e4a52a,#bd7410);}
+.meeting-record-status{position:absolute;right:12px;top:10px;z-index:50;display:none;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;background:rgba(183,28,28,.92);color:#fff;font-size:11px;font-weight:700;box-shadow:0 5px 14px rgba(0,0,0,.25);}
+.meeting-record-status.show{display:flex;}
+.meeting-record-status i{width:8px;height:8px;border-radius:50%;background:#fff;display:block;animation:recordDot .9s ease-in-out infinite;}
+@keyframes recordPulse{0%,100%{transform:scale(1);box-shadow:0 5px 14px rgba(0,0,0,.28),0 0 0 0 rgba(255,23,68,.45)}50%{transform:scale(1.07);box-shadow:0 7px 20px rgba(0,0,0,.35),0 0 0 8px rgba(255,23,68,0)}}
+@keyframes recordDot{0%,100%{opacity:1}50%{opacity:.35}}
 .meeting-control.end{background:linear-gradient(145deg,#e94b4b,#b51f2b);}
 
 /* Active / disabled states */
@@ -681,6 +722,8 @@
               <span class="meeting-live" id="meetingStatus"><i></i> READY</span>
             </div>
 
+            <div class="meeting-record-status" id="meetingRecordStatus" role="status" aria-live="polite"><i></i><span>Recording</span></div>
+
             <div class="meeting-grid" id="videoGrid">
               <div class="meeting-person local-person" id="localTile">
                 <video id="localVideo" autoplay muted playsinline></video>
@@ -696,6 +739,15 @@
               <button class="meeting-control" id="screenBtn" type="button" aria-label="Screen sharing">🖥</button>
               <button class="meeting-control" id="chatBtn" type="button" aria-label="Chat">💬</button>
               <button class="meeting-control end" id="leaveBtn" type="button" aria-label="Leave meeting">☎</button>
+            </div>
+
+            <div class="meeting-record-dock is-hidden" id="meetingRecordDock" aria-label="Meeting recording controls">
+              <div class="meeting-record-dock__label">🎥 Recording</div>
+              <button class="meeting-record-main" id="recordBtn" type="button" aria-label="Record meeting">
+                <span class="meeting-record-main__icon">⏺</span>
+                <span class="meeting-record-main__text">Record Meeting</span>
+              </button>
+              <small id="recordFormatHint">Video recording · MP4 when supported, otherwise WebM</small>
             </div>
 
             <div class="meeting-chat-panel" id="meetingChatPanel" aria-live="polite">
@@ -927,6 +979,9 @@
       camera: document.getElementById("cameraBtn"),
       screen: document.getElementById("screenBtn"),
       chat: document.getElementById("chatBtn"),
+      record: document.getElementById("recordBtn"),
+      recordStatus: document.getElementById("meetingRecordStatus"),
+      recordDock: document.getElementById("meetingRecordDock"),
       chatPanel: document.getElementById("meetingChatPanel"),
       chatMessages: document.getElementById("meetingChatMessages"),
       chatEmpty: document.getElementById("chatEmpty"),
@@ -942,6 +997,11 @@
     let myId = "";
     let joined = false;
     const peers = new Map(); // peerId -> { pc, name, tile, video, mic }
+
+    let mediaRecorder = null;
+    let recordingStream = null;
+    let recordingChunks = [];
+    let recordingStartedAt = 0;
 
     let iceServers = [
       { urls: "stun:stun.l.google.com:19302" },
@@ -1210,6 +1270,7 @@
       try {
         await connectSignaling();
         showMessage(`Joined room ${roomCode}. Waiting for other members...`);
+        els.recordDock?.classList.remove("is-hidden");
         localStorage.setItem("yssamolaMeetingName", name);
       } catch (err) {
         showMessage(err.message || "Could not join the meeting.");
@@ -1217,8 +1278,111 @@
       }
     }
 
+    function recordingMimeType() {
+      const types = [
+        "video/mp4;codecs=avc1,mp4a.40.2",
+        "video/mp4",
+        "video/webm;codecs=vp9,opus",
+        "video/webm;codecs=vp8,opus",
+        "video/webm"
+      ];
+      return types.find(type => window.MediaRecorder?.isTypeSupported?.(type)) || "";
+    }
+
+    function recordingExtension(mimeType) {
+      return mimeType && mimeType.startsWith("video/mp4") ? "mp4" : "webm";
+    }
+
+    function setRecordingUI(recording) {
+      if (!els.record) return;
+      els.record.classList.toggle("recording", recording);
+      els.record.innerHTML = `<span class="meeting-record-main__icon">${recording ? "⏹" : "⏺"}</span><span class="meeting-record-main__text">${recording ? "Stop & Save" : "Record Meeting"}</span>`;
+      els.record.setAttribute("aria-label", recording ? "Stop recording" : "Record meeting");
+      els.record.title = recording ? "Stop recording and save" : "Record meeting";
+      els.recordStatus?.classList.toggle("show", recording);
+    }
+
+    async function startRecording() {
+      if (!joined) {
+        showMessage("Join the meeting first.");
+        return;
+      }
+      if (!navigator.mediaDevices?.getDisplayMedia || !window.MediaRecorder) {
+        showMessage("Recording is not supported by this browser. Try Chrome or Edge on desktop/Android.");
+        return;
+      }
+      if (mediaRecorder && mediaRecorder.state !== "inactive") return;
+
+      try {
+        showMessage("Choose the meeting tab/window to record. Keep Chat open if you want the chat visible in the video.");
+        recordingStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: { ideal: 30, max: 30 } },
+          audio: true
+        });
+
+        const mimeType = recordingMimeType();
+        mediaRecorder = new MediaRecorder(recordingStream, mimeType ? { mimeType } : undefined);
+        recordingChunks = [];
+        recordingStartedAt = Date.now();
+
+        mediaRecorder.ondataavailable = event => {
+          if (event.data && event.data.size > 0) recordingChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const finalMime = mimeType || "video/webm";
+          const blob = new Blob(recordingChunks, { type: finalMime });
+          recordingChunks = [];
+          const stamp = new Date(recordingStartedAt || Date.now())
+            .toISOString().replace(/[:.]/g, "-");
+          const safeRoom = (roomCode || "meeting").replace(/[^A-Z0-9_-]/gi, "-");
+          const extension = recordingExtension(finalMime);
+          const filename = `YSSAMOLA-${safeRoom}-${stamp}.${extension}`;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+          showMessage(extension === "mp4" ? `Recording saved as ${filename}` : `Recording saved as ${filename}. This browser does not support MP4 recording, so WebM was used.`);
+        };
+
+        recordingStream.getVideoTracks()[0].addEventListener("ended", () => {
+          if (mediaRecorder && mediaRecorder.state !== "inactive") stopRecording();
+        }, { once:true });
+
+        mediaRecorder.start(1000);
+        setRecordingUI(true);
+        showMessage(mimeType.startsWith("video/mp4") ? "Recording started. Video and visible chat will be saved as MP4." : "Recording started. Video and visible chat will be saved. This browser will use WebM because MP4 recording is not supported.");
+      } catch (err) {
+        if (recordingStream) recordingStream.getTracks().forEach(track => track.stop());
+        recordingStream = null;
+        mediaRecorder = null;
+        setRecordingUI(false);
+        if (err?.name === "NotAllowedError") {
+          showMessage("Recording was cancelled. Please allow screen/tab sharing and try again.");
+        } else {
+          showMessage("Could not start recording: " + (err?.message || err?.name || "unknown error"));
+        }
+      }
+    }
+
+    function stopRecording() {
+      if (!mediaRecorder || mediaRecorder.state === "inactive") return;
+      mediaRecorder.stop();
+      if (recordingStream) {
+        recordingStream.getTracks().forEach(track => track.stop());
+        recordingStream = null;
+      }
+      setRecordingUI(false);
+    }
+
     function stopAll() {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") stopRecording();
       joined = false;
+      els.recordDock?.classList.add("is-hidden");
       els.chatPanel.classList.remove("open");
       els.chat.setAttribute("aria-expanded", "false");
       clearChatMessages();
@@ -1364,6 +1528,14 @@
       els.chatInput.value = "";
       els.chatInput.focus();
       openChatPanel();
+    });
+
+    els.record.addEventListener("click", () => {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        stopRecording();
+      } else {
+        startRecording();
+      }
     });
 
     els.leave.addEventListener("click", () => {
