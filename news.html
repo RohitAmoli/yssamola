@@ -1310,6 +1310,49 @@
       els.recordStatus?.classList.toggle("show", recording);
     }
 
+    function setupRecordingAudio() {
+      // Mix the local microphone and all currently connected remote audio tracks
+      // into one audio track for the meeting-area recording.
+      try {
+        if (!window.AudioContext && !window.webkitAudioContext) return null;
+
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        recordingAudioContext = new AudioCtx();
+        recordingAudioDestination = recordingAudioContext.createMediaStreamDestination();
+        recordingAudioSources = [];
+
+        const addStreamAudio = (stream) => {
+          if (!stream || !stream.getAudioTracks().length) return;
+          try {
+            const source = recordingAudioContext.createMediaStreamSource(stream);
+            source.connect(recordingAudioDestination);
+            recordingAudioSources.push(source);
+          } catch (err) {
+            console.warn("Could not add audio stream to recording:", err);
+          }
+        };
+
+        // The local track is normally OFF when members join, which is intentional.
+        // If the member turns the microphone on, this same track is included.
+        addStreamAudio(localStream);
+
+        // Each remote video element receives the remote MediaStream.
+        peers.forEach(item => {
+          addStreamAudio(item.video?.srcObject);
+        });
+
+        recordingAudioContext.resume?.().catch(() => {});
+        return recordingAudioDestination.stream.getAudioTracks()[0] || null;
+      } catch (err) {
+        console.warn("Recording audio setup failed:", err);
+        try { recordingAudioContext?.close(); } catch {}
+        recordingAudioContext = null;
+        recordingAudioDestination = null;
+        recordingAudioSources = [];
+        return null;
+      }
+    }
+
     async function startRecording() {
       if (!joined) {
         showMessage("Join the meeting first.");
