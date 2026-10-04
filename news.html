@@ -781,7 +781,7 @@
                 <input id="memberName" class="meeting-input" type="text"
                        placeholder="Your name" autocomplete="name" maxlength="40" required />
                 <input id="meetingCode" class="meeting-input" type="text"
-                       placeholder="Enter Official Meeting Code" autocomplete="off"
+                       placeholder="Meeting code, e.g. AMOLA123" autocomplete="off"
                        autocapitalize="characters" maxlength="32" required />
                 <button class="meeting-btn meeting-btn-primary" type="submit">
                   Join Meeting →
@@ -1547,8 +1547,8 @@
         showMessage("Join the meeting first.");
         return;
       }
-      if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
-        showMessage("Meeting-area recording is not supported by this browser. Try Chrome or Edge.");
+      if (!window.MediaRecorder) {
+        showMessage("Recording is not supported by this mobile browser. Please use the latest Chrome, Edge, or Safari.");
         return;
       }
       if (mediaRecorder && mediaRecorder.state !== "inactive") return;
@@ -1567,10 +1567,27 @@
         recordingChunks = [];
         recordingStopRequested = false;
 
-        const videoStream = recordingCanvas.captureStream(30);
-        recordingStream = videoStream;
-        const audioTrack = setupRecordingAudio();
-        if (audioTrack) recordingStream.addTrack(audioTrack);
+        let usingMobileScreenFallback = false;
+        if (typeof recordingCanvas.captureStream === "function") {
+          recordingStream = recordingCanvas.captureStream(30);
+          const audioTrack = setupRecordingAudio();
+          if (audioTrack) recordingStream.addTrack(audioTrack);
+        } else if (navigator.mediaDevices?.getDisplayMedia) {
+          // Some mobile browsers (especially iOS Safari) do not expose
+          // HTMLCanvasElement.captureStream(). In that case use the browser's
+          // native screen/tab recorder so the Record button still works.
+          usingMobileScreenFallback = true;
+          try {
+            recordingStream = await navigator.mediaDevices.getDisplayMedia({
+              video: { frameRate: 30 },
+              audio: true
+            });
+          } catch (captureErr) {
+            throw new Error("This mobile browser cannot record the meeting area. Please allow screen recording, or use the latest Chrome on Android / Safari on iPhone.");
+          }
+        } else {
+          throw new Error("Meeting recording is not supported by this mobile browser. Please use the latest Chrome or Safari.");
+        }
 
         const mimeType = recordingMimeType();
         mediaRecorder = new MediaRecorder(recordingStream, mimeType ? { mimeType } : undefined);
@@ -1606,8 +1623,22 @@
 
         mediaRecorder.start(1000);
         setRecordingUI(true);
-        drawMeetingRecordingFrame();
-        showMessage(mimeType.startsWith("video/mp4") ? "Recording only the meeting area, including visible chat, as MP4." : "Recording only the meeting area, including visible chat. This browser will save WebM because MP4 recording is not supported.");
+        if (!usingMobileScreenFallback) drawMeetingRecordingFrame();
+        if (usingMobileScreenFallback) {
+          showMessage("Mobile meeting-area capture is unavailable, so native screen recording has started. Stop recording to save the video.");
+          const activeStream = recordingStream;
+          const endedTrack = activeStream?.getVideoTracks?.()[0];
+          if (endedTrack) {
+            endedTrack.addEventListener("ended", () => {
+              if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                recordingStopRequested = true;
+                mediaRecorder.stop();
+              }
+            }, { once: true });
+          }
+        } else {
+          showMessage(mimeType.startsWith("video/mp4") ? "Recording only the meeting area, including visible chat, as MP4." : "Recording only the meeting area, including visible chat. This browser will save WebM because MP4 recording is not supported.");
+        }
       } catch (err) {
         cancelAnimationFrame(recordingAnimationFrame);
         recordingAnimationFrame = 0;
