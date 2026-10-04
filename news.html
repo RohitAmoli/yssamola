@@ -571,12 +571,29 @@
               </div>
             </div>
 
-            <div class="meeting-controls">
-              <button class="meeting-control" id="micBtn" type="button" aria-label="Microphone">🎙</button>
-              <button class="meeting-control" id="cameraBtn" type="button" aria-label="Camera">📹</button>
-              <button class="meeting-control" id="screenBtn" type="button" aria-label="Screen sharing">🖥</button>
-              <button class="meeting-control" id="chatBtn" type="button" aria-label="Chat">💬</button>
-              <button class="meeting-control end" id="leaveBtn" type="button" aria-label="Leave meeting">☎</button>
+            <div class="meeting-controls" aria-label="Meeting controls">
+              <button class="meeting-control active" id="micBtn" type="button" aria-label="Microphone">
+                🔇<span class="control-label">Mic</span>
+              </button>
+              <button class="meeting-control active" id="cameraBtn" type="button" aria-label="Camera">
+                🚫<span class="control-label">Camera</span>
+              </button>
+              <button class="meeting-control" id="playPauseBtn" type="button" aria-label="Pause video" disabled>
+                ⏸<span class="control-label">Pause video</span>
+              </button>
+              <button class="meeting-control" id="screenBtn" type="button" aria-label="Screen sharing">
+                🖥<span class="control-label">Share screen</span>
+              </button>
+              <button class="meeting-control" id="chatBtn" type="button" aria-label="Chat" aria-expanded="false">
+                💬<span class="control-label">Chat</span>
+              </button>
+              <button class="meeting-control record" id="recordBtn" type="button" aria-label="Record meeting">
+                ⏺<span class="control-label">Record</span>
+              </button>
+              <span class="meeting-record-status" id="recordStatus"><i></i> Recording…</span>
+              <button class="meeting-control end" id="leaveBtn" type="button" aria-label="Leave meeting">
+                ☎<span class="control-label">Leave</span>
+              </button>
             </div>
 
             <div class="meeting-chat-panel" id="meetingChatPanel" aria-live="polite">
@@ -806,8 +823,11 @@
       title: document.getElementById("meetingTitle"),
       mic: document.getElementById("micBtn"),
       camera: document.getElementById("cameraBtn"),
+      playPause: document.getElementById("playPauseBtn"),
       screen: document.getElementById("screenBtn"),
       chat: document.getElementById("chatBtn"),
+      record: document.getElementById("recordBtn"),
+      recordStatus: document.getElementById("recordStatus"),
       chatPanel: document.getElementById("meetingChatPanel"),
       chatMessages: document.getElementById("meetingChatMessages"),
       chatEmpty: document.getElementById("chatEmpty"),
@@ -819,6 +839,12 @@
     let socket = null;
     let localStream = null;
     let screenStream = null;
+    let recordingStream = null;
+    let mediaRecorder = null;
+    let recordingChunks = [];
+    let recordingStartedAt = 0;
+    let shouldDownloadRecording = true;
+    let videoPaused = false;
     let roomCode = "";
     let myId = "";
     let joined = false;
@@ -1000,6 +1026,9 @@
               joined = true;
               setStatus("LIVE", true);
               els.title.textContent = `YSSAMOLA Member Meeting · ${roomCode}`;
+              els.playPause.disabled = false;
+              els.playPause.textContent = "⏸";
+              els.playPause.setAttribute("aria-label", "Pause video");
               resolve();
             }
 
@@ -1099,7 +1128,12 @@
     }
 
     function stopAll() {
+      stopRecording(false);
       joined = false;
+      videoPaused = false;
+      els.playPause.disabled = true;
+      els.playPause.textContent = "⏸";
+      els.playPause.setAttribute("aria-label", "Pause video");
       els.chatPanel.classList.remove("open");
       els.chat.setAttribute("aria-expanded", "false");
       clearChatMessages();
@@ -1199,6 +1233,173 @@
       }
     });
 
+
+    function getRecordingMimeType() {
+      const candidates = [
+        "video/webm;codecs=vp9,opus",
+        "video/webm;codecs=vp8,opus",
+        "video/webm"
+      ];
+      return candidates.find(type => MediaRecorder.isTypeSupported(type)) || "";
+    }
+
+    async function startRecording() {
+      if (!joined) {
+        showMessage("Join the meeting first.");
+        return;
+      }
+      if (!navigator.mediaDevices?.getDisplayMedia) {
+        showMessage("Meeting recording is not supported by this browser.");
+        return;
+      }
+      if (mediaRecorder?.state === "recording") return;
+
+      try {
+        /*
+          Browser recording captures the meeting tab/screen. In Chrome/Edge,
+          choose the meeting tab and enable "Share tab audio" when prompted
+          to include the conversation audio.
+        */
+        recordingStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: { ideal: 30, max: 30 } },
+          audio: true
+        });
+
+        const mimeType = getRecordingMimeType();
+        mediaRecorder = mimeType
+          ? new MediaRecorder(recordingStream, { mimeType })
+          : new MediaRecorder(recordingStream);
+
+        recordingChunks = [];
+        recordingStartedAt = Date.now();
+
+        mediaRecorder.ondataavailable = event => {
+          if (event.data?.size) recordingChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordingChunks, {
+            type: mediaRecorder?.mimeType || "video/webm"
+          });
+
+          if (blob.size && shouldDownloadRecording) {
+            const stamp = new Date().toISOString()
+              .replace(/[:.]/g, "-")
+              .replace("T", "_")
+              .slice(0, 19);
+            const safeRoom = (roomCode || "meeting").replace(/[^A-Z0-9_-]/gi, "-");
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `YSSAMOLA-${safeRoom}-${stamp}.webm`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+            showMessage("Recording stopped. The meeting video was downloaded to your Downloads folder.");
+          }
+
+          recordingChunks = [];
+          recordingStartedAt = 0;
+          shouldDownloadRecording = true;
+          if (recordingStream) {
+            recordingStream.getTracks().forEach(track => track.stop());
+            recordingStream = null;
+          }
+          mediaRecorder = null;
+          els.record.classList.remove("recording");
+          els.record.textContent = "⏺";
+          els.record.setAttribute("aria-label", "Record meeting");
+          els.record.querySelector(".control-label").textContent = "Record";
+          els.recordStatus.classList.remove("show");
+        };
+
+        const videoTrack = recordingStream.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.addEventListener("ended", () => {
+            if (mediaRecorder?.state === "recording") mediaRecorder.stop();
+          }, { once: true });
+        }
+
+        mediaRecorder.start(1000);
+        els.record.classList.add("recording");
+        els.record.textContent = "⏹";
+        els.record.setAttribute("aria-label", "Stop recording");
+        els.record.querySelector(".control-label").textContent = "Stop recording";
+        els.recordStatus.classList.add("show");
+        showMessage("Recording started. The meeting screen and shared/tab audio are being captured.");
+      } catch (err) {
+        if (err?.name === "NotAllowedError") {
+          showMessage("Recording was cancelled. To record, allow the browser to share the meeting tab or screen.");
+        } else {
+          showMessage("Could not start recording: " + (err?.message || err?.name || "unknown error"));
+        }
+        if (recordingStream) {
+          recordingStream.getTracks().forEach(track => track.stop());
+          recordingStream = null;
+        }
+      }
+    }
+
+    function stopRecording(download = true) {
+      shouldDownloadRecording = download;
+      if (mediaRecorder?.state === "recording") {
+        mediaRecorder.stop();
+        return;
+      }
+      if (recordingStream) {
+        recordingStream.getTracks().forEach(track => track.stop());
+        recordingStream = null;
+      }
+      mediaRecorder = null;
+      recordingChunks = [];
+      els.record?.classList.remove("recording");
+      if (els.record) {
+        els.record.textContent = "⏺";
+        els.record.setAttribute("aria-label", "Record meeting");
+        const label = els.record.querySelector(".control-label");
+        if (label) label.textContent = "Record";
+      }
+      els.recordStatus?.classList.remove("show");
+    }
+
+    function setRemoteVideoPlayback(paused) {
+      peers.forEach(item => {
+        if (paused) {
+          item.video.pause();
+        } else {
+          item.video.play().catch(() => {});
+        }
+      });
+      if (paused) {
+        els.localVideo.pause();
+      } else if (els.localVideo.srcObject) {
+        els.localVideo.play().catch(() => {});
+      }
+    }
+
+    els.playPause.addEventListener("click", () => {
+      if (!joined) return;
+      videoPaused = !videoPaused;
+      setRemoteVideoPlayback(videoPaused);
+      els.playPause.textContent = videoPaused ? "▶" : "⏸";
+      els.playPause.setAttribute("aria-label", videoPaused ? "Resume video" : "Pause video");
+      const label = els.playPause.querySelector(".control-label");
+      if (label) label.textContent = videoPaused ? "Resume video" : "Pause video";
+      els.playPause.classList.toggle("active", videoPaused);
+      showMessage(videoPaused
+        ? "Video playback paused on this device. Audio controls are unchanged."
+        : "Video playback resumed.");
+    });
+
+    els.record.addEventListener("click", () => {
+      if (mediaRecorder?.state === "recording") {
+        showMessage("Stopping recording and preparing the download…");
+        mediaRecorder.stop();
+      } else {
+        startRecording();
+      }
+    });
+
     function openChatPanel() {
       els.chatPanel.classList.add("open");
       els.chat.setAttribute("aria-expanded", "true");
@@ -1252,7 +1453,10 @@
       showMessage("You left the meeting.");
     });
 
-    window.addEventListener("beforeunload", stopAll);
+    window.addEventListener("beforeunload", () => {
+      if (mediaRecorder?.state === "recording") shouldDownloadRecording = false;
+      stopAll();
+    });
 
     // Restore only the member name. Never save or pre-fill the meeting code.
     els.name.value = localStorage.getItem("yssamolaMeetingName") || "";
@@ -1264,4 +1468,111 @@
 
 
 </body>
-</html>
+</html
+    /* =========================================================
+       IMPROVED MEETING CONTROLS + RECORDING
+       ========================================================= */
+    .meeting-controls{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:10px;
+      padding:15px 12px;
+      background:#171d24;
+      border-top:1px solid rgba(255,255,255,.06);
+    }
+    .meeting-control{
+      position:relative;
+      width:46px;
+      height:46px;
+      flex:0 0 46px;
+      border-radius:50%;
+      display:grid;
+      place-items:center;
+      color:#fff;
+      background:#2b333d;
+      border:1px solid rgba(255,255,255,.10);
+      font-size:17px;
+      cursor:pointer;
+      transition:transform .15s, background .15s, border-color .15s, box-shadow .15s;
+    }
+    .meeting-control:hover{
+      transform:translateY(-1px);
+      background:#39434f;
+    }
+    .meeting-control:focus-visible{
+      outline:3px solid rgba(244,165,28,.55);
+      outline-offset:2px;
+    }
+    .meeting-control.active{
+      background:#3b4652;
+      border-color:#f4a51c;
+      box-shadow:0 0 0 2px rgba(244,165,28,.16);
+    }
+    .meeting-control.record{
+      background:#5a2424;
+      border-color:#9b3a3a;
+    }
+    .meeting-control.record.recording{
+      background:#d92d20;
+      border-color:#ff8b82;
+      animation:recordPulse 1.2s infinite;
+    }
+    .meeting-control.end{
+      width:54px;
+      flex-basis:54px;
+      border-radius:22px;
+      background:#d92d20;
+      border-color:#ef655b;
+      font-size:18px;
+    }
+    .meeting-control .control-label{
+      position:absolute;
+      top:calc(100% + 7px);
+      left:50%;
+      transform:translateX(-50%);
+      padding:4px 7px;
+      border-radius:5px;
+      background:#090c10;
+      color:#fff;
+      font:500 10px/1.2 'Poppins',sans-serif;
+      white-space:nowrap;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .15s;
+      z-index:20;
+    }
+    .meeting-control:hover .control-label,
+    .meeting-control:focus-visible .control-label{
+      opacity:1;
+    }
+    .meeting-record-status{
+      display:none;
+      align-items:center;
+      gap:6px;
+      margin-left:4px;
+      padding:7px 10px;
+      border-radius:999px;
+      background:#3a1d1d;
+      color:#ffb4ae;
+      font:600 11px/1 'Poppins',sans-serif;
+      white-space:nowrap;
+    }
+    .meeting-record-status.show{display:inline-flex}
+    .meeting-record-status i{
+      width:7px;height:7px;border-radius:50%;background:#ff3b30;
+      animation:recordPulse 1.2s infinite;
+    }
+    @keyframes recordPulse{
+      50%{box-shadow:0 0 0 5px rgba(217,45,32,.15);opacity:.72}
+    }
+    @media(max-width:600px){
+      .meeting-controls{gap:8px;padding:13px 7px}
+      .meeting-control{width:44px;height:44px;flex-basis:44px}
+      .meeting-control.end{width:50px;flex-basis:50px}
+      .meeting-record-status{width:100%;justify-content:center;margin:2px 0 0}
+      .meeting-control .control-label{display:none}
+    }
+
+>
