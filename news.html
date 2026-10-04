@@ -1400,7 +1400,7 @@
       const bottom = 64;
       const gap = 8;
       const chatGap = hasChat ? 12 : 0;
-      const chatW = hasChat ? Math.min(330, Math.max(250, rect.width * 0.30)) : 0;
+      const chatW = hasChat ? Math.min(260, Math.max(190, rect.width * 0.21)) : 0; // 70% of the previous chat width
       // Reserve a dedicated right column for chat so it never covers participant video.
       const videoAreaX = 0;
       const videoAreaW = Math.max(180, rect.width - chatW - chatGap);
@@ -1519,7 +1519,7 @@
           ctx.fillText(meta.slice(0, 32), px + 14, cy);
           cy += 12;
 
-          const maxChars = Math.max(22, Math.floor((chatW - 30) / 6.1));
+          const maxChars = Math.max(18, Math.floor((chatW - 30) / 6.1));
           const words = String(msgText).split(/\s+/), lines = [];
           let line = "";
           for (const word of words) {
