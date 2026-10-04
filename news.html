@@ -435,6 +435,8 @@
   .meeting-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    grid-auto-rows:minmax(180px,1fr);
+    align-content:stretch;
     gap:10px;
     padding:10px;
     min-height:420px;
@@ -483,7 +485,7 @@
   .meeting-live{white-space:nowrap}
   @media(max-width:900px){
     .meeting-layout{grid-template-columns:1fr}
-    .meeting-grid{min-height:300px;grid-template-columns:repeat(2,minmax(0,1fr))}
+    .meeting-grid{min-height:300px;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(145px,1fr)}
   }
   @media(max-width:520px){
     .meeting-grid{grid-template-columns:1fr 1fr;padding:6px;gap:6px}
@@ -1403,10 +1405,16 @@
       const videoAreaX = 0;
       const videoAreaW = Math.max(180, rect.width - chatW - chatGap);
       const availableH = Math.max(180, rect.height - top - bottom);
-      const cols = Math.max(1, Math.min(4, Math.ceil(Math.sqrt(Math.max(1, tiles.length)))));
-      const rows = Math.max(1, Math.ceil(Math.max(1, tiles.length) / cols));
-      const tileW = (videoAreaW - gap * (cols + 1)) / cols;
-      const tileH = (availableH - gap * (rows + 1)) / rows;
+      // Use a stable, predictable grid for any number of members.
+      // Columns are chosen from the available video-area aspect ratio, capped at 4,
+      // so adding members creates new rows instead of overlapping or shifting chat.
+      const memberCount = Math.max(1, tiles.length);
+      const targetAspect = Math.max(1, videoAreaW / availableH);
+      const suggestedCols = Math.ceil(Math.sqrt(memberCount * targetAspect));
+      const cols = Math.max(1, Math.min(4, suggestedCols));
+      const rows = Math.max(1, Math.ceil(memberCount / cols));
+      const tileW = Math.max(80, (videoAreaW - gap * (cols + 1)) / cols);
+      const tileH = Math.max(70, (availableH - gap * (rows + 1)) / rows);
 
       const roundRect = (x,y,w,h,r,fill,stroke) => {
         ctx.beginPath();
