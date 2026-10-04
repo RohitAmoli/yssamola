@@ -1002,6 +1002,12 @@
     let recordingStream = null;
     let recordingChunks = [];
     let recordingStartedAt = 0;
+    let recordingAnimationFrame = 0;
+    let recordingCanvas = null;
+    let recordingCtx = null;
+    let recordingAudioContext = null;
+    let recordingAudioDestination = null;
+    let recordingAudioSources = [];
 
     let iceServers = [
       { urls: "stun:stun.l.google.com:19302" },
@@ -1302,39 +1308,225 @@
       els.recordStatus?.classList.toggle("show", recording);
     }
 
+    function drawCover(ctx, video, x, y, w, h) {
+      if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return false;
+      const scale = Math.max(w / video.videoWidth, h / video.videoHeight);
+      const dw = video.videoWidth * scale;
+      const dh = video.videoHeight * scale;
+      ctx.drawImage(video, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+      return true;
+    }
+
+    function drawMeetingRecordingFrame() {
+      if (!recordingCtx || !recordingCanvas) return;
+      const root = document.getElementById("meetingWindow");
+      if (!root) return;
+      const rootRect = root.getBoundingClientRect();
+      const dpr = recordingCanvas.width / Math.max(1, rootRect.width);
+      const ctx = recordingCtx;
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const W = rootRect.width;
+      const H = rootRect.height;
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = "#0b1015";
+      ctx.fillRect(0, 0, W, H);
+
+      const rel = el => {
+        const r = el.getBoundingClientRect();
+        return { x:r.left-rootRect.left, y:r.top-rootRect.top, w:r.width, h:r.height };
+      };
+      const roundRect = (x,y,w,h,r,fill) => {
+        ctx.beginPath();
+        ctx.roundRect(x,y,w,h,r);
+        ctx.fillStyle = fill;
+        ctx.fill();
+      };
+      const text = (value,x,y,size,fill="#fff",weight="600",align="left") => {
+        ctx.font = `${weight} ${size}px Poppins, Arial, sans-serif`;
+        ctx.fillStyle = fill;
+        ctx.textAlign = align;
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(value || ""), x, y);
+      };
+
+      // Meeting header only — no browser/tab chrome.
+      const topEl = root.querySelector(".meeting-window__top");
+      if (topEl) {
+        const r = rel(topEl);
+        ctx.fillStyle = "#171d24";
+        ctx.fillRect(r.x,r.y,r.w,r.h);
+        text(document.getElementById("meetingTitle")?.textContent || "YSSAMOLA Member Meeting", r.x+16, r.y+r.h/2, 13, "#e8edf2", "600");
+        const live = document.getElementById("meetingStatus");
+        if (live) {
+          const lw = 74;
+          roundRect(r.x+r.w-lw-12,r.y+(r.h-25)/2,lw,25,13,"#b42318");
+          text("● LIVE",r.x+r.w-lw/2-12,r.y+r.h/2,10,"#fff","700","center");
+        }
+      }
+
+      // Participant/video tiles exactly from the meeting grid.
+      const grid = document.getElementById("videoGrid");
+      if (grid) {
+        const gr = rel(grid);
+        ctx.fillStyle = "#0b0f14";
+        ctx.fillRect(gr.x,gr.y,gr.w,gr.h);
+        const tiles = [...grid.querySelectorAll(".meeting-person")];
+        tiles.forEach(tile => {
+          const tr = rel(tile);
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(tr.x,tr.y,tr.w,tr.h,10);
+          ctx.clip();
+          ctx.fillStyle = "#202832";
+          ctx.fillRect(tr.x,tr.y,tr.w,tr.h);
+          const video = tile.querySelector("video");
+          const hasVideo = drawCover(ctx, video, tr.x,tr.y,tr.w,tr.h);
+          if (!hasVideo) {
+            const avatar = tile.querySelector(".person-avatar");
+            const label = avatar?.textContent || "YOU";
+            ctx.fillStyle = "#164c32";
+            ctx.beginPath();
+            ctx.arc(tr.x+tr.w/2,tr.y+tr.h/2,Math.min(35,tr.h*.2),0,Math.PI*2);
+            ctx.fill();
+            text(label,tr.x+tr.w/2,tr.y+tr.h/2,16,"#fff","700","center");
+          }
+          ctx.restore();
+          const name = tile.querySelector(".person-name")?.textContent || "Member";
+          const mic = tile.querySelector(".person-mic")?.textContent || "🎙";
+          const nameW = Math.min(tr.w-70, Math.max(70, name.length*7+18));
+          roundRect(tr.x+9,tr.y+tr.h-34,nameW,24,6,"rgba(0,0,0,.58)");
+          text(name,tr.x+18,tr.y+tr.h-22,11,"#fff","600");
+          roundRect(tr.x+tr.w-39,tr.y+tr.h-34,29,29,14,"rgba(0,0,0,.58)");
+          text(mic,tr.x+tr.w-24,tr.y+tr.h-20,12,"#fff","600","center");
+        });
+      }
+
+      // Main circular controls.
+      const controls = root.querySelector(".meeting-controls");
+      if (controls) {
+        const cr = rel(controls);
+        ctx.fillStyle = "#0b1015";
+        ctx.fillRect(cr.x,cr.y,cr.w,cr.h);
+        const buttons = [...controls.querySelectorAll(".meeting-control")];
+        buttons.forEach(btn => {
+          const br = rel(btn);
+          const cs = getComputedStyle(btn);
+          ctx.fillStyle = cs.backgroundColor || "#26313b";
+          ctx.beginPath();
+          ctx.arc(br.x+br.w/2,br.y+br.h/2,Math.min(br.w,br.h)/2,0,Math.PI*2);
+          ctx.fill();
+          const icon = btn.textContent.trim();
+          text(icon,br.x+br.w/2,br.y+br.h/2,20,"#fff","600","center");
+        });
+      }
+
+      // Separate recording dock is represented only as a small status line, not browser UI.
+      if (els.recordStatus?.classList.contains("show")) {
+        roundRect(W-120,10,108,28,14,"rgba(183,28,28,.92)");
+        text("● Recording",W-66,24,10,"#fff","700","center");
+      }
+
+      // Chat is part of the meeting area and is captured when it is open.
+      const chat = document.getElementById("meetingChatPanel");
+      if (chat?.classList.contains("open")) {
+        const ch = rel(chat);
+        ctx.fillStyle = "#10161d";
+        ctx.fillRect(ch.x,ch.y,ch.w,ch.h);
+        const head = chat.querySelector(".meeting-chat-head");
+        if (head) {
+          const hr = rel(head);
+          ctx.fillStyle = "#171e27";
+          ctx.fillRect(hr.x,hr.y,hr.w,hr.h);
+          text("💬 Meeting Chat",hr.x+14,hr.y+hr.h/2,12,"#fff","700");
+          text("Everyone in this meeting",hr.x+hr.w-14,hr.y+hr.h/2,10,"#9da8b5","500","right");
+        }
+        const messages = [...chat.querySelectorAll(".meeting-chat-message")].slice(-30);
+        messages.forEach((row,i) => {
+          const rr = rel(row);
+          const bubble = row.querySelector(".meeting-chat-bubble");
+          const meta = row.querySelector(".meeting-chat-meta")?.textContent || "Member";
+          const mine = row.classList.contains("mine");
+          const x = mine ? ch.x+ch.w-170 : ch.x+14;
+          const maxW = 155;
+          const y = Math.min(ch.y+ch.h-42, ch.y+50+i*34);
+          text(meta,x,y,8,"#8995a2","500");
+          roundRect(x,y+5,maxW,25,10,mine?"#315c80":"#26313d");
+          const msgText = bubble?.textContent || "";
+          text(msgText.slice(0,34),x+9,y+18,9,"#fff","500");
+        });
+      }
+      ctx.restore();
+      recordingAnimationFrame = requestAnimationFrame(drawMeetingRecordingFrame);
+    }
+
+    function setupRecordingAudio() {
+      if (!window.AudioContext && !window.webkitAudioContext) return null;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      recordingAudioContext = new AudioCtx();
+      recordingAudioDestination = recordingAudioContext.createMediaStreamDestination();
+      const streams = [];
+      if (localStream?.getAudioTracks().length) streams.push(localStream);
+      peers.forEach(item => {
+        const stream = item.video?.srcObject;
+        if (stream?.getAudioTracks?.().length) streams.push(stream);
+      });
+      streams.forEach(stream => {
+        try {
+          const source = recordingAudioContext.createMediaStreamSource(stream);
+          const gain = recordingAudioContext.createGain();
+          gain.gain.value = 1;
+          source.connect(gain).connect(recordingAudioDestination);
+          recordingAudioSources.push(source);
+        } catch (err) { console.warn("Recording audio source unavailable", err); }
+      });
+      recordingAudioContext.resume?.().catch(() => {});
+      return recordingAudioDestination.stream.getAudioTracks()[0] || null;
+    }
+
     async function startRecording() {
       if (!joined) {
         showMessage("Join the meeting first.");
         return;
       }
-      if (!navigator.mediaDevices?.getDisplayMedia || !window.MediaRecorder) {
-        showMessage("Recording is not supported by this browser. Try Chrome or Edge on desktop/Android.");
+      if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
+        showMessage("Meeting-area recording is not supported by this browser. Try Chrome or Edge.");
         return;
       }
       if (mediaRecorder && mediaRecorder.state !== "inactive") return;
 
       try {
-        showMessage("Choose the meeting tab/window to record. Keep Chat open if you want the chat visible in the video.");
-        recordingStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { frameRate: { ideal: 30, max: 30 } },
-          audio: true
-        });
+        const root = document.getElementById("meetingWindow");
+        const rect = root.getBoundingClientRect();
+        const scale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+        recordingCanvas = document.createElement("canvas");
+        recordingCanvas.width = Math.max(1, Math.floor(rect.width * scale));
+        recordingCanvas.height = Math.max(1, Math.floor(rect.height * scale));
+        recordingCanvas.style.width = `${rect.width}px`;
+        recordingCanvas.style.height = `${rect.height}px`;
+        recordingCtx = recordingCanvas.getContext("2d");
+        recordingStartedAt = Date.now();
+        recordingChunks = [];
+
+        const videoStream = recordingCanvas.captureStream(30);
+        recordingStream = videoStream;
+        const audioTrack = setupRecordingAudio();
+        if (audioTrack) recordingStream.addTrack(audioTrack);
 
         const mimeType = recordingMimeType();
         mediaRecorder = new MediaRecorder(recordingStream, mimeType ? { mimeType } : undefined);
-        recordingChunks = [];
-        recordingStartedAt = Date.now();
 
         mediaRecorder.ondataavailable = event => {
           if (event.data && event.data.size > 0) recordingChunks.push(event.data);
         };
 
         mediaRecorder.onstop = () => {
+          cancelAnimationFrame(recordingAnimationFrame);
+          recordingAnimationFrame = 0;
           const finalMime = mimeType || "video/webm";
           const blob = new Blob(recordingChunks, { type: finalMime });
           recordingChunks = [];
-          const stamp = new Date(recordingStartedAt || Date.now())
-            .toISOString().replace(/[:.]/g, "-");
+          const stamp = new Date(recordingStartedAt || Date.now()).toISOString().replace(/[:.]/g, "-");
           const safeRoom = (roomCode || "meeting").replace(/[^A-Z0-9_-]/gi, "-");
           const extension = recordingExtension(finalMime);
           const filename = `YSSAMOLA-${safeRoom}-${stamp}.${extension}`;
@@ -1346,36 +1538,45 @@
           a.click();
           a.remove();
           setTimeout(() => URL.revokeObjectURL(url), 2000);
-          showMessage(extension === "mp4" ? `Recording saved as ${filename}` : `Recording saved as ${filename}. This browser does not support MP4 recording, so WebM was used.`);
+          showMessage(extension === "mp4" ? `Meeting-area recording saved as ${filename}` : `Meeting-area recording saved as ${filename}. This browser does not support MP4 recording, so WebM was used.`);
         };
-
-        recordingStream.getVideoTracks()[0].addEventListener("ended", () => {
-          if (mediaRecorder && mediaRecorder.state !== "inactive") stopRecording();
-        }, { once:true });
 
         mediaRecorder.start(1000);
         setRecordingUI(true);
-        showMessage(mimeType.startsWith("video/mp4") ? "Recording started. Video and visible chat will be saved as MP4." : "Recording started. Video and visible chat will be saved. This browser will use WebM because MP4 recording is not supported.");
+        drawMeetingRecordingFrame();
+        showMessage(mimeType.startsWith("video/mp4") ? "Recording only the meeting area, including visible chat, as MP4." : "Recording only the meeting area, including visible chat. This browser will save WebM because MP4 recording is not supported.");
       } catch (err) {
+        cancelAnimationFrame(recordingAnimationFrame);
+        recordingAnimationFrame = 0;
         if (recordingStream) recordingStream.getTracks().forEach(track => track.stop());
         recordingStream = null;
+        recordingCtx = null;
+        recordingCanvas = null;
+        try { recordingAudioContext?.close(); } catch {}
+        recordingAudioContext = null;
+        recordingAudioDestination = null;
+        recordingAudioSources = [];
         mediaRecorder = null;
         setRecordingUI(false);
-        if (err?.name === "NotAllowedError") {
-          showMessage("Recording was cancelled. Please allow screen/tab sharing and try again.");
-        } else {
-          showMessage("Could not start recording: " + (err?.message || err?.name || "unknown error"));
-        }
+        showMessage("Could not start meeting-area recording: " + (err?.message || err?.name || "unknown error"));
       }
     }
 
     function stopRecording() {
       if (!mediaRecorder || mediaRecorder.state === "inactive") return;
       mediaRecorder.stop();
+      cancelAnimationFrame(recordingAnimationFrame);
+      recordingAnimationFrame = 0;
       if (recordingStream) {
         recordingStream.getTracks().forEach(track => track.stop());
         recordingStream = null;
       }
+      try { recordingAudioContext?.close(); } catch {}
+      recordingAudioContext = null;
+      recordingAudioDestination = null;
+      recordingAudioSources = [];
+      recordingCanvas = null;
+      recordingCtx = null;
       setRecordingUI(false);
     }
 
