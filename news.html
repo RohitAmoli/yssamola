@@ -1548,74 +1548,68 @@
         return;
       }
       if (!window.MediaRecorder) {
-        showMessage("Recording is not supported by this mobile browser. Please use the latest Chrome, Edge, or Safari.");
+        showMessage("Recording is not supported by this browser.");
+        return;
+      }
+      if (!HTMLCanvasElement.prototype.captureStream) {
+        showMessage("This mobile browser does not support meeting-area recording. Please use the latest Chrome or Safari version.");
         return;
       }
       if (mediaRecorder && mediaRecorder.state !== "inactive") return;
 
       try {
         const root = document.getElementById("meetingWindow");
+        if (!root) throw new Error("Meeting window was not found.");
+
         const rect = root.getBoundingClientRect();
         const scale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
         recordingCanvas = document.createElement("canvas");
-        recordingCanvas.width = Math.max(1, Math.floor(rect.width * scale));
-        recordingCanvas.height = Math.max(1, Math.floor(rect.height * scale));
+        recordingCanvas.width = Math.max(2, Math.floor(rect.width * scale));
+        recordingCanvas.height = Math.max(2, Math.floor(rect.height * scale));
         recordingCanvas.style.width = `${rect.width}px`;
         recordingCanvas.style.height = `${rect.height}px`;
-        recordingCtx = recordingCanvas.getContext("2d");
+        recordingCtx = recordingCanvas.getContext("2d", { alpha:false });
+        if (!recordingCtx) throw new Error("Could not create recording canvas.");
+
         recordingStartedAt = Date.now();
         recordingChunks = [];
         recordingStopRequested = false;
 
-        let usingMobileScreenFallback = false;
-        if (typeof recordingCanvas.captureStream === "function") {
-          recordingStream = recordingCanvas.captureStream(30);
-          const audioTrack = setupRecordingAudio();
-          if (audioTrack) recordingStream.addTrack(audioTrack);
-        } else if (navigator.mediaDevices?.getDisplayMedia) {
-          // Some mobile browsers (especially iOS Safari) do not expose
-          // HTMLCanvasElement.captureStream(). In that case use the browser's
-          // native screen/tab recorder so the Record button still works.
-          usingMobileScreenFallback = true;
-          try {
-            recordingStream = await navigator.mediaDevices.getDisplayMedia({
-              video: { frameRate: 30 },
-              audio: true
-            });
-          } catch (captureErr) {
-            throw new Error("This mobile browser cannot record the meeting area. Please allow screen recording, or use the latest Chrome on Android / Safari on iPhone.");
-          }
-        } else {
-          throw new Error("Meeting recording is not supported by this mobile browser. Please use the latest Chrome or Safari.");
+        // IMPORTANT: mobile uses exactly the same meeting-area recording path
+        // as desktop. Do not fall back to getDisplayMedia(), because that
+        // creates a separate mobile screen-capture session which can end
+        // immediately on some phones and can capture the wrong content.
+        recordingStream = recordingCanvas.captureStream(30);
+        if (!recordingStream || !recordingStream.getVideoTracks().length) {
+          throw new Error("The browser could not create a meeting recording stream.");
         }
 
+        const audioTrack = setupRecordingAudio();
+        if (audioTrack) recordingStream.addTrack(audioTrack);
+
         const mimeType = recordingMimeType();
-        mediaRecorder = new MediaRecorder(recordingStream, mimeType ? { mimeType } : undefined);
+        const options = mimeType ? { mimeType } : undefined;
+        mediaRecorder = new MediaRecorder(recordingStream, options);
 
         mediaRecorder.ondataavailable = event => {
           if (event.data && event.data.size > 0) recordingChunks.push(event.data);
+        };
+
+        mediaRecorder.onerror = event => {
+          console.error("MediaRecorder error:", event.error || event);
+          showMessage("Recording error occurred. Please try recording again.");
         };
 
         mediaRecorder.onstop = () => {
           cancelAnimationFrame(recordingAnimationFrame);
           recordingAnimationFrame = 0;
 
-          // Mobile browsers need the source tracks alive until MediaRecorder
-          // has emitted its final data. Cleanup happens only after onstop.
-          const tracks = recordingStream ? recordingStream.getTracks() : [];
-
-          if (!recordingStopRequested) {
-            recordingChunks = [];
-            tracks.forEach(track => { try { track.stop(); } catch {} });
-            recordingStream = null;
-            setRecordingUI(false);
-            return;
-          }
-
-          const finalMime = mimeType || recordingChunks[0]?.type || "video/webm";
-          const blob = new Blob(recordingChunks, { type: finalMime });
+          const finalMime = recordingChunks[0]?.type || mimeType || "video/webm";
+          const chunks = recordingChunks.slice();
           recordingChunks = [];
 
+          // Cleanup only after MediaRecorder has delivered its final data.
+          const tracks = recordingStream ? recordingStream.getTracks() : [];
           tracks.forEach(track => { try { track.stop(); } catch {} });
           recordingStream = null;
           try { recordingAudioContext?.close(); } catch {}
@@ -1625,13 +1619,19 @@
           recordingCanvas = null;
           recordingCtx = null;
           mediaRecorder = null;
+
+          const blob = new Blob(chunks, { type: finalMime });
           setRecordingUI(false);
+          els.record?.removeAttribute("disabled");
 
           if (!blob.size) {
-            showMessage("Recording stopped, but no video data was produced. Please try again in Chrome or Safari.");
+            showMessage("Recording stopped, but no video data was produced. Please try again.");
             return;
           }
 
+          // A recording that reaches onstop unexpectedly is still saved if it
+          // contains valid data. This prevents mobile browsers from silently
+          // losing a usable recording.
           const stamp = new Date(recordingStartedAt || Date.now()).toISOString().replace(/[:.]/g, "-");
           const safeRoom = (roomCode || "meeting").replace(/[^A-Z0-9_-]/gi, "-");
           const extension = recordingExtension(finalMime);
@@ -1644,34 +1644,29 @@
           document.body.appendChild(a);
           a.click();
           a.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 10000);
-          showMessage(extension === "mp4" ? `Recording stopped and saved as ${filename}` : `Recording stopped and saved as ${filename}. This browser uses WebM because MP4 recording is not supported.`);
+          setTimeout(() => URL.revokeObjectURL(url), 15000);
+
+          showMessage(
+            extension === "mp4"
+              ? `Recording saved as ${filename}`
+              : `Recording saved as ${filename}. This browser uses WebM because MP4 recording is not supported.`
+          );
         };
 
-        // Mobile Safari/Chrome can behave badly with a timeslice. Let the
-        // recorder buffer normally and flush the final data on Stop.
+        // Start WITHOUT a timeslice. This is more reliable on mobile Safari
+        // and Chrome and ensures Stop produces one complete final file.
         mediaRecorder.start();
         setRecordingUI(true);
-        if (!usingMobileScreenFallback) drawMeetingRecordingFrame();
-        if (usingMobileScreenFallback) {
-          showMessage("Mobile meeting-area capture is unavailable, so native screen recording has started. Stop recording to save the video.");
-          const activeStream = recordingStream;
-          const endedTrack = activeStream?.getVideoTracks?.()[0];
-          if (endedTrack) {
-            endedTrack.addEventListener("ended", () => {
-              if (mediaRecorder && mediaRecorder.state !== "inactive") {
-                recordingStopRequested = true;
-                mediaRecorder.stop();
-              }
-            }, { once: true });
-          }
-        } else {
-          showMessage(mimeType.startsWith("video/mp4") ? "Recording only the meeting area, including visible chat, as MP4." : "Recording only the meeting area, including visible chat. This browser will save WebM because MP4 recording is not supported.");
-        }
+        drawMeetingRecordingFrame();
+        showMessage(
+          mimeType.startsWith("video/mp4")
+            ? "Recording started. Tap Stop when the meeting is finished."
+            : "Recording started. Tap Stop when the meeting is finished. The file will be saved as WebM."
+        );
       } catch (err) {
         cancelAnimationFrame(recordingAnimationFrame);
         recordingAnimationFrame = 0;
-        if (recordingStream) recordingStream.getTracks().forEach(track => track.stop());
+        if (recordingStream) recordingStream.getTracks().forEach(track => { try { track.stop(); } catch {} });
         recordingStream = null;
         recordingCtx = null;
         recordingCanvas = null;
@@ -1681,6 +1676,7 @@
         recordingAudioSources = [];
         mediaRecorder = null;
         setRecordingUI(false);
+        els.record?.removeAttribute("disabled");
         showMessage("Could not start meeting-area recording: " + (err?.message || err?.name || "unknown error"));
       }
     }
