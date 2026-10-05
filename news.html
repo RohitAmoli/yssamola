@@ -1598,14 +1598,40 @@
 
         mediaRecorder.onstop = () => {
           cancelAnimationFrame(recordingAnimationFrame);
+          recordingAnimationFrame = 0;
+
+          // Mobile browsers need the source tracks alive until MediaRecorder
+          // has emitted its final data. Cleanup happens only after onstop.
+          const tracks = recordingStream ? recordingStream.getTracks() : [];
+
           if (!recordingStopRequested) {
             recordingChunks = [];
+            tracks.forEach(track => { try { track.stop(); } catch {} });
+            recordingStream = null;
+            setRecordingUI(false);
             return;
           }
-          recordingAnimationFrame = 0;
-          const finalMime = mimeType || "video/webm";
+
+          const finalMime = mimeType || recordingChunks[0]?.type || "video/webm";
           const blob = new Blob(recordingChunks, { type: finalMime });
           recordingChunks = [];
+
+          tracks.forEach(track => { try { track.stop(); } catch {} });
+          recordingStream = null;
+          try { recordingAudioContext?.close(); } catch {}
+          recordingAudioContext = null;
+          recordingAudioDestination = null;
+          recordingAudioSources = [];
+          recordingCanvas = null;
+          recordingCtx = null;
+          mediaRecorder = null;
+          setRecordingUI(false);
+
+          if (!blob.size) {
+            showMessage("Recording stopped, but no video data was produced. Please try again in Chrome or Safari.");
+            return;
+          }
+
           const stamp = new Date(recordingStartedAt || Date.now()).toISOString().replace(/[:.]/g, "-");
           const safeRoom = (roomCode || "meeting").replace(/[^A-Z0-9_-]/gi, "-");
           const extension = recordingExtension(finalMime);
@@ -1614,14 +1640,17 @@
           const a = document.createElement("a");
           a.href = url;
           a.download = filename;
+          a.rel = "noopener";
           document.body.appendChild(a);
           a.click();
           a.remove();
-          setTimeout(() => URL.revokeObjectURL(url), 2000);
-          showMessage(extension === "mp4" ? `Meeting-area recording saved as ${filename}` : `Meeting-area recording saved as ${filename}. This browser does not support MP4 recording, so WebM was used.`);
+          setTimeout(() => URL.revokeObjectURL(url), 10000);
+          showMessage(extension === "mp4" ? `Recording stopped and saved as ${filename}` : `Recording stopped and saved as ${filename}. This browser uses WebM because MP4 recording is not supported.`);
         };
 
-        mediaRecorder.start(1000);
+        // Mobile Safari/Chrome can behave badly with a timeslice. Let the
+        // recorder buffer normally and flush the final data on Stop.
+        mediaRecorder.start();
         setRecordingUI(true);
         if (!usingMobileScreenFallback) drawMeetingRecordingFrame();
         if (usingMobileScreenFallback) {
@@ -1657,22 +1686,31 @@
     }
 
     function stopRecording() {
-      if (!mediaRecorder || mediaRecorder.state === "inactive") return;
+      const recorder = mediaRecorder;
+      if (!recorder || recorder.state === "inactive") return;
+
       recordingStopRequested = true;
-      mediaRecorder.stop();
+      setRecordingUI(true);
+      els.record?.setAttribute("disabled", "disabled");
+      els.record?.setAttribute("aria-label", "Stopping recording");
+      els.record?.setAttribute("title", "Finishing recording...");
+
+      try {
+        if (typeof recorder.requestData === "function") recorder.requestData();
+      } catch {}
+
+      try {
+        recorder.stop();
+      } catch {
+        if (recorder.state !== "inactive") {
+          showMessage("Could not stop recording. Please tap Stop once more.");
+        }
+      }
+
+      // Do NOT stop recordingStream here. The onstop handler must receive the
+      // final media data first, then it stops the tracks and downloads the file.
       cancelAnimationFrame(recordingAnimationFrame);
       recordingAnimationFrame = 0;
-      if (recordingStream) {
-        recordingStream.getTracks().forEach(track => track.stop());
-        recordingStream = null;
-      }
-      try { recordingAudioContext?.close(); } catch {}
-      recordingAudioContext = null;
-      recordingAudioDestination = null;
-      recordingAudioSources = [];
-      recordingCanvas = null;
-      recordingCtx = null;
-      setRecordingUI(false);
     }
 
     function stopAll() {
