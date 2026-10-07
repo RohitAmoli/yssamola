@@ -1000,6 +1000,7 @@
     let roomCode = "";
     let myId = "";
     let joined = false;
+    let mediaReadyPromise = null;
     const peers = new Map(); // peerId -> { pc, name, tile, video, mic }
 
     let mediaRecorder = null;
@@ -1171,7 +1172,20 @@
     async function makePeer(peerId, name, initiator) {
       if (peers.has(peerId)) return peers.get(peerId);
 
-      const pc = new RTCPeerConnection({ iceServers });
+      // Media capture and signaling now start in parallel. If signaling receives
+      // a peer before getUserMedia finishes, wait here so the first offer already
+      // contains the local audio/video tracks instead of requiring another
+      // renegotiation.
+      if (mediaReadyPromise) {
+        try { await mediaReadyPromise; } catch {}
+      }
+
+      const pc = new RTCPeerConnection({
+        iceServers,
+        iceCandidatePoolSize: 2,
+        bundlePolicy: "max-bundle",
+        rtcpMuxPolicy: "require"
+      });
       const tile = createPeerTile(peerId, name);
       const item = {
         pc,
@@ -1385,12 +1399,18 @@
         return;
       }
 
-      const ok = await getMedia();
-      if (!ok) return;
-
       showMessage("Connecting to the meeting...");
       try {
-        await connectSignaling();
+        // Start browser media setup and the WebSocket connection at the same time.
+        // This removes the previous serial delay where camera/mic initialization
+        // had to finish before the signaling connection could even begin.
+        mediaReadyPromise = getMedia();
+        const signalingPromise = connectSignaling();
+        const [ok] = await Promise.all([mediaReadyPromise, signalingPromise]);
+        if (!ok) {
+          stopAll();
+          return;
+        }
         showMessage(`Joined room ${roomCode}. Waiting for other members...`);
         els.record?.classList.remove("is-hidden");
         localStorage.setItem("yssamolaMeetingName", name);
@@ -1823,6 +1843,7 @@
     function stopAll() {
       if (mediaRecorder && mediaRecorder.state !== "inactive") stopRecording();
       joined = false;
+      mediaReadyPromise = null;
       els.record?.classList.add("is-hidden");
       els.chatPanel.classList.remove("open");
       els.chat.setAttribute("aria-expanded", "false");
