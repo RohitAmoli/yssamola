@@ -954,2961 +954,1143 @@
 
 
   <script>
-(() => {
+  (() => {
+    /*
+      YSSAMOLA REAL-TIME MEMBER MEETING
+      --------------------------------
+      Audio/video: WebRTC
+      Signaling: WebSocket server in server.js
+      IMPORTANT:
+      - In production HTTPS pages should use WSS.
+      - Set SIGNALING_URL to your deployed WSS endpoint.
+    */
+    const SIGNALING_URL = "wss://yssamola1.onrender.com";
 
-  const SIGNALING_URL = "wss://yssamola1.onrender.com";
+    const els = {
+      form: document.getElementById("joinMeetingForm"),
+      name: document.getElementById("memberName"),
+      code: document.getElementById("meetingCode"),
+      start: document.getElementById("startMeetingBtn"),
+      test: document.getElementById("testMediaBtn"),
+      msg: document.getElementById("permissionMessage"),
+      grid: document.getElementById("videoGrid"),
+      localVideo: document.getElementById("localVideo"),
+      localAvatar: document.getElementById("localAvatar"),
+      localName: document.getElementById("localName"),
+      localMic: document.getElementById("localMic"),
+      status: document.getElementById("meetingStatus"),
+      title: document.getElementById("meetingTitle"),
+      mic: document.getElementById("micBtn"),
+      camera: document.getElementById("cameraBtn"),
+      screen: document.getElementById("screenBtn"),
+      chat: document.getElementById("chatBtn"),
+      record: document.getElementById("recordBtn"),
+      recordStatus: document.getElementById("meetingRecordStatus"),
+      chatPanel: document.getElementById("meetingChatPanel"),
+      chatMessages: document.getElementById("meetingChatMessages"),
+      chatEmpty: document.getElementById("chatEmpty"),
+      chatForm: document.getElementById("meetingChatForm"),
+      chatInput: document.getElementById("meetingChatInput"),
+      leave: document.getElementById("leaveBtn")
+    };
 
-  const els = {
-    form: document.getElementById("joinMeetingForm"),
-    name: document.getElementById("memberName"),
-    code: document.getElementById("meetingCode"),
-    start: document.getElementById("startMeetingBtn"),
-    test: document.getElementById("testMediaBtn"),
-    msg: document.getElementById("permissionMessage"),
+    let socket = null;
+    let localStream = null;
+    let screenStream = null;
+    let roomCode = "";
+    let myId = "";
+    let joined = false;
+    const peers = new Map(); // peerId -> { pc, name, tile, video, mic }
 
-    grid: document.getElementById("videoGrid"),
+    let mediaRecorder = null;
+    let recordingStream = null;
+    let recordingChunks = [];
+    let recordingStartedAt = 0;
+    let recordingAnimationFrame = 0;
+    let recordingCanvas = null;
+    let recordingCtx = null;
+    let recordingAudioContext = null;
+    let recordingAudioDestination = null;
+    let recordingAudioSources = [];
+    let recordingStopRequested = false;
 
-    localVideo: document.getElementById("localVideo"),
-    localAvatar: document.getElementById("localAvatar"),
-    localName: document.getElementById("localName"),
-    localMic: document.getElementById("localMic"),
+    let iceServers = [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" }
+    ];
 
-    status: document.getElementById("meetingStatus"),
-    title: document.getElementById("meetingTitle"),
-
-    mic: document.getElementById("micBtn"),
-    camera: document.getElementById("cameraBtn"),
-    screen: document.getElementById("screenBtn"),
-    chat: document.getElementById("chatBtn"),
-    leave: document.getElementById("leaveBtn"),
-
-    record: document.getElementById("recordBtn"),
-    recordStatus: document.getElementById("meetingRecordStatus"),
-
-    chatPanel: document.getElementById("meetingChatPanel"),
-    chatMessages: document.getElementById("meetingChatMessages"),
-    chatEmpty: document.getElementById("chatEmpty"),
-    chatForm: document.getElementById("meetingChatForm"),
-    chatInput: document.getElementById("meetingChatInput")
-  };
-
-
-  /*
-   * ============================================================
-   * STATE
-   * ============================================================
-   */
-
-  let socket = null;
-
-  let localStream = null;
-  let screenStream = null;
-
-  let roomCode = "";
-  let myId = "";
-  let myName = "";
-
-  let joined = false;
-  let mediaReadyPromise = null;
-
-  let iceServers = [
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" }
-  ];
-
-  /*
-   * peerId -> {
-   *   pc,
-   *   id,
-   *   name,
-   *   tile,
-   *   video,
-   *   mic,
-   *   candidates,
-   *   makingOffer
-   * }
-   */
-  const peers = new Map();
-
-
-  /*
-   * Recording state
-   */
-
-  let mediaRecorder = null;
-  let recordingStream = null;
-  let recordingChunks = [];
-  let recordingStartedAt = 0;
-  let recordingAnimationFrame = 0;
-  let recordingCanvas = null;
-  let recordingCtx = null;
-  let recordingAudioContext = null;
-  let recordingAudioDestination = null;
-  let recordingAudioSources = [];
-
-
-  /*
-   * ============================================================
-   * HELPERS
-   * ============================================================
-   */
-
-  function showMessage(text) {
-    if (els.msg) {
+    function showMessage(text) {
       els.msg.textContent = text || "";
     }
-  }
 
-  function setStatus(text, live = false) {
-    if (!els.status) return;
-
-    els.status.innerHTML = live
-      ? `<i></i> ${text}`
-      : text;
-  }
-
-  function initials(name) {
-    return String(name || "YOU")
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map(x => x[0]?.toUpperCase() || "")
-      .join("") || "YOU";
-  }
-
-  function isOfferer(peerId) {
-
-    /*
-     * Exactly ONE browser becomes offerer.
-     *
-     * This is deterministic.
-     */
-    if (!myId || !peerId) return false;
-
-    return myId < peerId;
-  }
-
-
-  /*
-   * ============================================================
-   * MEDIA
-   * ============================================================
-   */
-
-  function mediaErrorMessage(error) {
-
-    if (
-      !window.isSecureContext &&
-      location.hostname !== "localhost"
-    ) {
-      return "Camera/mic needs HTTPS.";
+    function setStatus(text, live = false) {
+      els.status.innerHTML = live ? `<i></i> ${text}` : text;
     }
 
-    if (
-      error?.name === "NotAllowedError" ||
-      error?.name === "SecurityError"
-    ) {
-      return "Camera/microphone permission was blocked. Allow both permissions and try again.";
+    function initials(name) {
+      return String(name || "YOU").trim().split(/\s+/).slice(0,2)
+        .map(x => x[0]?.toUpperCase() || "").join("") || "YOU";
     }
 
-    if (error?.name === "NotFoundError") {
-      return "No camera or microphone was found.";
-    }
-
-    if (error?.name === "NotReadableError") {
-      return "Camera or microphone is already being used by another application.";
-    }
-
-    return (
-      "Could not access camera/microphone: " +
-      (error?.message || error?.name || "unknown error")
-    );
-  }
-
-
-  async function getMedia() {
-
-    try {
-
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error(
-          "Camera and microphone are not available in this browser."
-        );
+    function mediaErrorMessage(err) {
+      if (!window.isSecureContext && location.hostname !== "localhost") {
+        return "Camera/mic needs HTTPS. Open the meeting through your https:// website.";
       }
-
-      if (
-        !window.isSecureContext &&
-        location.hostname !== "localhost"
-      ) {
-        throw new DOMException(
-          "HTTPS required",
-          "SecurityError"
-        );
+      if (err?.name === "NotAllowedError" || err?.name === "SecurityError") {
+        return "Camera/mic permission was blocked. Allow Camera and Microphone for this website in your browser settings, then try again.";
       }
-
-      if (localStream) {
-        return true;
+      if (err?.name === "NotFoundError") {
+        return "No camera or microphone was found on this device.";
       }
+      if (err?.name === "NotReadableError") {
+        return "The camera or microphone is already being used by another app.";
+      }
+      return "Could not access camera/microphone: " + (err?.message || err?.name || "unknown error");
+    }
 
-      localStream =
-        await navigator.mediaDevices.getUserMedia({
+    async function getMedia() {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("getUserMedia is not available in this browser.");
+        }
+        if (!window.isSecureContext && location.hostname !== "localhost") {
+          throw new DOMException("HTTPS required", "SecurityError");
+        }
+        localStream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-            channelCount: 1
+            echoCancellation: { ideal:true },
+            noiseSuppression: { ideal:true },
+            autoGainControl: { ideal:true },
+            channelCount: { ideal:1 },
+            sampleRate: { ideal:48000 },
+            latency: { ideal:0.02 }
           },
-
           video: {
-            facingMode: "user",
-            width: {
-              ideal: 960,
-              max: 1280
-            },
-            height: {
-              ideal: 540,
-              max: 720
-            },
-            frameRate: {
-              ideal: 24,
-              max: 30
-            }
+            facingMode:"user",
+            width:{ideal:640, max:960},
+            height:{ideal:360, max:540},
+            frameRate:{ideal:20, max:24}
           }
         });
-
-
-      /*
-       * IMPORTANT:
-       *
-       * Hardware permission is granted, but both tracks
-       * start disabled.
-       */
-      localStream
-        .getAudioTracks()
-        .forEach(track => {
+        localStream.getAudioTracks().forEach(track => track.enabled = false);
+        localStream.getVideoTracks().forEach(track => {
           track.enabled = false;
+          try { track.contentHint = "motion"; } catch {}
         });
-
-      localStream
-        .getVideoTracks()
-        .forEach(track => {
-          track.enabled = false;
-        });
-
-
-      els.localVideo.srcObject = localStream;
-
-      els.localVideo.classList.remove("active");
-
-      els.localAvatar.style.display = "flex";
-
-      els.mic.textContent = "🔇";
-      els.camera.textContent = "🚫";
-
-      els.mic.classList.add("active");
-      els.camera.classList.add("active");
-
-      els.localName.textContent =
-        els.name.value.trim() || "You";
-
-      els.localMic.textContent = "🔇";
-
-      try {
-        await els.localVideo.play();
-      } catch {}
-
-      showMessage(
-        "Meeting joined with camera and microphone OFF."
-      );
-
-      return true;
-
-    } catch (error) {
-
-      showMessage(
-        mediaErrorMessage(error)
-      );
-
-      return false;
+        els.localVideo.srcObject = localStream;
+        els.localVideo.autoplay = true;
+        els.localVideo.muted = true;
+        els.localVideo.playsInline = true;
+        els.localVideo.setAttribute("playsinline", "");
+        els.localVideo.classList.remove("active");
+        els.localAvatar.style.display = "flex";
+        els.mic.textContent = "🔇";
+        els.camera.textContent = "🚫";
+        els.mic.classList.add("active");
+        els.camera.classList.add("active");
+        showMessage("Joined with camera and microphone OFF. Use the controls to turn them on.");
+        return true;
+      } catch (err) {
+        showMessage(mediaErrorMessage(err));
+        return false;
+      }
     }
-  }
 
+    function addLocalPlaceholder() {
+      els.localVideo.classList.remove("active");
+      els.localAvatar.style.display = "flex";
+    }
 
-  /*
-   * ============================================================
-   * REMOTE TILE
-   * ============================================================
-   */
+    function createPeerTile(peerId, name) {
+      const tile = document.createElement("div");
+      tile.className = "meeting-person";
+      tile.id = `peer-${peerId}`;
 
-  function createPeerTile(id, name) {
+      const video = document.createElement("video");
+      video.autoplay = true;
+      video.playsInline = true;
 
-    const tile =
-      document.createElement("div");
+      const avatar = document.createElement("div");
+      avatar.className = "person-avatar";
+      avatar.textContent = initials(name);
 
-    tile.className = "meeting-person";
+      const label = document.createElement("span");
+      label.className = "person-name";
+      label.textContent = name || "Member";
 
-    tile.id = `peer-${id}`;
+      const mic = document.createElement("span");
+      mic.className = "person-mic";
+      mic.textContent = "🎙";
 
+      tile.append(video, avatar, label, mic);
+      els.grid.appendChild(tile);
+      return { tile, video, mic };
+    }
 
-    const video =
-      document.createElement("video");
+    function removePeer(peerId) {
+      const item = peers.get(peerId);
+      if (!item) return;
+      if (item.retryTimer) clearTimeout(item.retryTimer);
+      try { item.pc.close(); } catch {}
+      item.tile?.remove();
+      peers.delete(peerId);
+    }
 
-    video.autoplay = true;
-    video.playsInline = true;
-    video.setAttribute("playsinline", "");
-    video.muted = false;
+    async function restartPeerIce(item, reason = "connection") {
+      if (!item?.initiator || !item.pc || !joined) return;
+      const pc = item.pc;
 
-
-    const avatar =
-      document.createElement("div");
-
-    avatar.className = "person-avatar";
-    avatar.textContent = initials(name);
-
-
-    const label =
-      document.createElement("span");
-
-    label.className = "person-name";
-    label.textContent = name || "Member";
-
-
-    const mic =
-      document.createElement("span");
-
-    mic.className = "person-mic";
-    mic.textContent = "🎙";
-
-
-    tile.append(
-      video,
-      avatar,
-      label,
-      mic
-    );
-
-    els.grid.appendChild(tile);
-
-
-    return {
-      tile,
-      video,
-      avatar,
-      label,
-      mic
-    };
-  }
-
-
-  /*
-   * ============================================================
-   * CREATE PEER CONNECTION
-   * ============================================================
-   */
-
-  async function createPeer(peerId, name) {
-
-    /*
-     * If connection already exists, reuse it.
-     */
-    if (peers.has(peerId)) {
-
-      const existing =
-        peers.get(peerId);
-
-      if (
-        name &&
-        existing.name !== name
-      ) {
-        existing.name = name;
-        existing.label.textContent = name;
-        existing.avatar.textContent = initials(name);
+      if (item.retryTimer) {
+        clearTimeout(item.retryTimer);
+        item.retryTimer = null;
       }
 
-      return existing;
+      // Only the original offerer performs ICE-restart renegotiation.
+      // This prevents offer glare when both sides notice a bad connection.
+      if (item.iceRestartInProgress) return;
+
+      item.retryTimer = setTimeout(async () => {
+        item.retryTimer = null;
+
+        if (!joined || pc.connectionState === "connected" || pc.connectionState === "closed") return;
+
+        // A new ICE-restart offer requires a stable signaling state.
+        if (pc.signalingState !== "stable") {
+          // The current offer/answer exchange may still be completing.
+          // Try again shortly instead of creating a competing offer.
+          item.retryTimer = setTimeout(() => restartPeerIce(item, reason), 1200);
+          return;
+        }
+
+        if (socket?.readyState !== WebSocket.OPEN) return;
+
+        item.iceRestartInProgress = true;
+
+        try {
+          const offer = await pc.createOffer({ iceRestart: true });
+          await pc.setLocalDescription(offer);
+
+          if (socket?.readyState !== WebSocket.OPEN) return;
+
+          socket.send(JSON.stringify({
+            type: "offer",
+            to: item.peerId,
+            offer: pc.localDescription
+          }));
+
+          showMessage(`Reconnecting audio/video with ${item.name}...`);
+        } catch (err) {
+          console.warn(`ICE restart failed for ${item.name}:`, err);
+          item.iceRestartInProgress = false;
+          item.retryTimer = setTimeout(() => restartPeerIce(item, reason), 1800);
+        }
+      }, reason === "disconnected" ? 1400 : 500);
     }
 
+    async function makePeer(peerId, name, initiator) {
+      if (peers.has(peerId)) return peers.get(peerId);
 
-    /*
-     * Wait for media.
-     */
-    if (mediaReadyPromise) {
-      try {
-        await mediaReadyPromise;
-      } catch {}
-    }
-
-
-    const tile =
-      createPeerTile(peerId, name);
-
-
-    const pc =
-      new RTCPeerConnection({
+      const pc = new RTCPeerConnection({
         iceServers,
-
         bundlePolicy: "max-bundle",
-
         rtcpMuxPolicy: "require"
       });
 
-
-    const item = {
-
-      id: peerId,
-
-      name:
-        name || "Member",
-
-      pc,
-
-      tile: tile.tile,
-
-      video: tile.video,
-
-      avatar: tile.avatar,
-
-      label: tile.label,
-
-      mic: tile.mic,
-
-      pendingCandidates: [],
-
-      remoteDescriptionSet: false,
-
-      makingOffer: false,
-
-      ignoreOffer: false,
-
-      closed: false,
-
-      retryTimer: null
-    };
-
-
-    peers.set(peerId, item);
-
-
-    /*
-     * Add local tracks.
-     *
-     * They remain disabled initially.
-     */
-    if (localStream) {
-
-      for (
-        const track
-        of localStream.getTracks()
-      ) {
-
-        try {
-          pc.addTrack(
-            track,
-            localStream
-          );
-        } catch {}
-      }
-    }
-
-
-    /*
-     * ==========================================================
-     * REMOTE TRACK
-     * ==========================================================
-     */
-
-    pc.ontrack = event => {
-
-      console.log(
-        "[WEBRTC] remote track",
+      const tile = createPeerTile(peerId, name);
+      const item = {
+        pc,
+        name,
         peerId,
-        event.track?.kind
-      );
-
-
-      let stream =
-        item.video.srcObject;
-
-
-      if (!stream) {
-
-        stream =
-          event.streams?.[0] ||
-          new MediaStream();
-
-        item.video.srcObject =
-          stream;
-      }
-
-
-      /*
-       * Some browsers don't provide streams[0].
-       */
-      if (
-        event.track &&
-        !stream
-          .getTracks()
-          .some(t => t.id === event.track.id)
-      ) {
-
-        try {
-          stream.addTrack(event.track);
-        } catch {}
-      }
-
-
-      item.avatar.style.display = "none";
-
-
-      item.video
-        .play()
-        .catch(() => {
-          setTimeout(() => {
-            item.video.play().catch(() => {});
-          }, 300);
-        });
-    };
-
-
-    /*
-     * ==========================================================
-     * ICE
-     * ==========================================================
-     */
-
-    pc.onicecandidate = event => {
-
-      if (!event.candidate) {
-        return;
-      }
-
-      if (
-        socket &&
-        socket.readyState === WebSocket.OPEN
-      ) {
-
-        socket.send(
-          JSON.stringify({
-            type: "candidate",
-
-            to: peerId,
-
-            candidate: event.candidate
-          })
-        );
-      }
-    };
-
-
-    pc.onicecandidateerror = event => {
-
-      console.warn(
-        "[ICE ERROR]",
-        peerId,
-        event.errorCode,
-        event.errorText
-      );
-    };
-
-
-    /*
-     * ==========================================================
-     * CONNECTION STATE
-     * ==========================================================
-     */
-
-    pc.oniceconnectionstatechange = () => {
-
-      console.log(
-        "[ICE]",
-        peerId,
-        pc.iceConnectionState
-      );
-
-
-      if (
-        pc.iceConnectionState ===
-          "connected" ||
-        pc.iceConnectionState ===
-          "completed"
-      ) {
-
-        if (item.retryTimer) {
-          clearTimeout(item.retryTimer);
-          item.retryTimer = null;
-        }
-
-      }
-
-
-      if (
-        pc.iceConnectionState ===
-          "failed"
-      ) {
-
-        restartIce(item);
-      }
-    };
-
-
-    pc.onconnectionstatechange = () => {
-
-      console.log(
-        "[CONNECTION]",
-        peerId,
-        pc.connectionState
-      );
-
-
-      if (
-        pc.connectionState ===
-          "connected"
-      ) {
-
-        showMessage(
-          "Meeting connection established."
-        );
-
-        if (item.retryTimer) {
-          clearTimeout(item.retryTimer);
-          item.retryTimer = null;
-        }
-      }
-
-
-      if (
-        pc.connectionState ===
-          "failed"
-      ) {
-
-        restartIce(item);
-      }
-
-
-      if (
-        pc.connectionState ===
-          "closed"
-      ) {
-
-        removePeer(peerId);
-      }
-    };
-
-
-    /*
-     * ==========================================================
-     * OFFER/NEGOTIATION
-     * ==========================================================
-     */
-
-    pc.onnegotiationneeded = async () => {
-
-      /*
-       * Only one side is allowed to make offers.
-       */
-      if (!isOfferer(peerId)) {
-        return;
-      }
-
-      if (!joined) {
-        return;
-      }
-
-      if (
-        !socket ||
-        socket.readyState !==
-          WebSocket.OPEN
-      ) {
-        return;
-      }
-
-      if (
-        item.makingOffer
-      ) {
-        return;
-      }
-
-
-      try {
-
-        item.makingOffer = true;
-
-
-        if (
-          pc.signalingState !==
-            "stable"
-        ) {
-          return;
-        }
-
-
-        const offer =
-          await pc.createOffer();
-
-
-        await pc.setLocalDescription(
-          offer
-        );
-
-
-        socket.send(
-          JSON.stringify({
-            type: "offer",
-
-            to: peerId,
-
-            offer:
-              pc.localDescription
-          })
-        );
-
-
-      } catch (error) {
-
-        console.error(
-          "[OFFER ERROR]",
-          peerId,
-          error
-        );
-
-      } finally {
-
-        item.makingOffer = false;
-      }
-    };
-
-
-    /*
-     * ==========================================================
-     * Add a local track after peer exists.
-     * ==========================================================
-     */
-
-    try {
-
-      pc.getSenders()
-        .forEach(sender => {
-
-          if (sender.track) {
-
-            try {
-
-              const parameters =
-                sender.getParameters();
-
-              if (
-                parameters.encodings &&
-                parameters.encodings.length
-              ) {
-
-                if (
-                  sender.track.kind ===
-                    "video"
-                ) {
-
-                  parameters.encodings[0]
-                    .maxBitrate = 500000;
-
-                  parameters.encodings[0]
-                    .maxFramerate = 24;
-                }
-
-                if (
-                  sender.track.kind ===
-                    "audio"
-                ) {
-
-                  parameters.encodings[0]
-                    .maxBitrate = 48000;
-                }
-
-                sender
-                  .setParameters(
-                    parameters
-                  )
-                  .catch(() => {});
-              }
-
-            } catch {}
+        initiator: !!initiator,
+        ...tile,
+        remoteStream: new MediaStream(),
+        pendingCandidates: [],
+        remoteDescriptionSet: false,
+        iceRestartInProgress: false,
+        retryTimer: null
+      };
+
+      peers.set(peerId, item);
+
+      if (localStream) {
+        localStream.getTracks().forEach(track => {
+          try {
+            const sender = pc.addTrack(track, localStream);
+            tuneSender(sender, track.kind === "video" ? "camera" : "audio");
+          } catch (err) {
+            console.warn("Could not add local track:", err);
           }
         });
+      }
 
-    } catch {}
+      pc.ontrack = event => {
+        const track = event.track;
+        if (!track) return;
 
+        if (!item.remoteStream.getTracks().some(t => t.id === track.id)) {
+          try { item.remoteStream.addTrack(track); } catch {}
+        }
 
-    return item;
-  }
+        if (item.video.srcObject !== item.remoteStream) {
+          item.video.srcObject = item.remoteStream;
+        }
 
+        item.video.autoplay = true;
+        item.video.playsInline = true;
+        item.video.setAttribute("playsinline", "");
+        item.video.muted = false;
+        item.video.volume = 1;
 
-  /*
-   * ============================================================
-   * ICE CANDIDATE QUEUE
-   * ============================================================
-   */
+        const avatar = item.tile.querySelector(".person-avatar");
+        if (track.kind === "video") {
+          avatar.style.display = "none";
+          item.video.classList.add("active");
+        }
 
-  async function flushCandidates(item) {
+        item.video.play().catch(() => {
+          setTimeout(() => item.video.play().catch(() => {}), 250);
+        });
+      };
 
-    if (!item) return;
+      pc.onicecandidate = event => {
+        if (event.candidate && socket?.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type:"candidate", to:peerId, candidate:event.candidate
+          }));
+        }
+      };
 
-    const candidates =
-      item.pendingCandidates.splice(
-        0
-      );
+      pc.onicecandidateerror = event => {
+        console.warn(`ICE candidate error for ${name}:`, event.errorCode, event.errorText || "");
+      };
 
-    for (
-      const candidate
-      of candidates
-    ) {
+      pc.oniceconnectionstatechange = () => {
+        const state = pc.iceConnectionState;
+
+        if (state === "connected" || state === "completed") {
+          item.iceRestartInProgress = false;
+          if (item.retryTimer) {
+            clearTimeout(item.retryTimer);
+            item.retryTimer = null;
+          }
+        }
+
+        if (state === "disconnected") restartPeerIce(item, "disconnected");
+        if (state === "failed") restartPeerIce(item, "failed");
+      };
+
+      pc.onconnectionstatechange = () => {
+        const state = pc.connectionState;
+
+        if (state === "connected") {
+          item.iceRestartInProgress = false;
+          if (item.retryTimer) {
+            clearTimeout(item.retryTimer);
+            item.retryTimer = null;
+          }
+        }
+
+        if (state === "disconnected") restartPeerIce(item, "disconnected");
+        if (state === "failed") restartPeerIce(item, "failed");
+
+        if (state === "closed") {
+          if (item.retryTimer) clearTimeout(item.retryTimer);
+          removePeer(peerId);
+        }
+      };
+
+      if (initiator) {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        if (socket?.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type:"offer",
+            to:peerId,
+            offer:pc.localDescription
+          }));
+        }
+      }
+
+      return item;
+    }
+
+    function tuneSender(sender, kind) {
+      if (!sender || !sender.getParameters) return;
 
       try {
+        const params = sender.getParameters();
+        params.encodings = params.encodings?.length ? params.encodings : [{}];
 
-        await item.pc.addIceCandidate(
-          candidate
-        );
-
-      } catch (error) {
-
-        console.warn(
-          "[ICE QUEUE ERROR]",
-          error
-        );
-      }
-    }
-  }
-
-
-  /*
-   * ============================================================
-   * ICE RESTART
-   * ============================================================
-   */
-
-  function restartIce(item) {
-
-    if (!item || !joined) {
-      return;
-    }
-
-    if (!isOfferer(item.id)) {
-      return;
-    }
-
-    if (item.retryTimer) {
-      return;
-    }
-
-
-    item.retryTimer =
-      setTimeout(async () => {
-
-        item.retryTimer = null;
-
-        const pc =
-          item.pc;
-
-
-        if (
-          pc.connectionState ===
-            "connected"
-        ) {
-          return;
-        }
-
-
-        if (
-          pc.signalingState !==
-            "stable"
-        ) {
-
-          restartIce(item);
-
-          return;
-        }
-
-
-        try {
-
-          const offer =
-            await pc.createOffer({
-              iceRestart: true
-            });
-
-
-          await pc.setLocalDescription(
-            offer
-          );
-
-
-          if (
-            socket &&
-            socket.readyState ===
-              WebSocket.OPEN
-          ) {
-
-            socket.send(
-              JSON.stringify({
-                type: "offer",
-
-                to: item.id,
-
-                offer:
-                  pc.localDescription,
-
-                restart: true
-              })
-            );
+        if (kind === "video") {
+          params.encodings[0].maxBitrate = 650000;
+          params.encodings[0].maxFramerate = 20;
+          if ("scaleResolutionDownBy" in params.encodings[0]) {
+            params.encodings[0].scaleResolutionDownBy = 1;
           }
-
-        } catch (error) {
-
-          console.warn(
-            "[ICE RESTART ERROR]",
-            error
-          );
-
-          restartIce(item);
+          if ("degradationPreference" in params) {
+            params.degradationPreference = "balanced";
+          }
+        } else {
+          params.encodings[0].maxBitrate = 64000;
         }
 
-      }, 1200);
-  }
+        sender.setParameters(params).catch(() => {});
+      } catch (err) {
+        console.warn("Sender tuning unavailable:", err);
+      }
 
-
-  /*
-   * ============================================================
-   * REMOVE PEER
-   * ============================================================
-   */
-
-  function removePeer(id) {
-
-    const item =
-      peers.get(id);
-
-    if (!item) {
-      return;
+      try {
+        if (sender.track && kind === "video") {
+          sender.track.contentHint = "motion";
+        }
+      } catch {}
     }
 
-
-    item.closed = true;
-
-
-    if (item.retryTimer) {
-
-      clearTimeout(
-        item.retryTimer
-      );
-
-      item.retryTimer = null;
-    }
-
-
-    try {
-      item.pc.close();
-    } catch {}
-
-
-    try {
-      item.tile.remove();
-    } catch {}
-
-
-    peers.delete(id);
-  }
-
-
-  /*
-   * ============================================================
-   * SIGNALING CONNECTION
-   * ============================================================
-   */
-
-  function connectSignaling() {
-
-    return new Promise(
-      (resolve, reject) => {
-
-        let settled = false;
-
-
-        socket =
-          new WebSocket(
-            SIGNALING_URL
-          );
-
+    function connectSignaling() {
+      return new Promise((resolve, reject) => {
+        socket = new WebSocket(SIGNALING_URL);
 
         socket.onopen = () => {
-
-          console.log(
-            "[SIGNALING] connected"
-          );
-
-
-          socket.send(
-            JSON.stringify({
-              type: "join",
-
-              room: roomCode,
-
-              name: myName
-            })
-          );
+          socket.send(JSON.stringify({
+            type:"join", room:roomCode, name:els.name.value.trim()
+          }));
         };
 
-
-        socket.onerror = error => {
-
-          console.error(
-            "[SIGNALING ERROR]",
-            error
-          );
-
-
-          if (!settled) {
-
-            settled = true;
-
-            reject(
-              new Error(
-                "Could not connect to the meeting server."
-              )
-            );
-          }
-        };
-
-
+        socket.onerror = () => reject(new Error("Could not connect to meeting server."));
         socket.onclose = () => {
-
-          console.warn(
-            "[SIGNALING] closed"
-          );
-
-
-          if (joined) {
-
-            setStatus(
-              "DISCONNECTED"
-            );
-
-            showMessage(
-              "Meeting server connection was closed. Please rejoin."
-            );
-          }
+          if (joined) showMessage("Meeting server connection closed.");
         };
 
+        socket.onmessage = async event => {
+          let msg;
+          try { msg = JSON.parse(event.data); } catch { return; }
 
-        socket.onmessage =
-          async event => {
-
-            let message;
-
-            try {
-
-              message =
-                JSON.parse(
-                  event.data
-                );
-
-            } catch {
-
-              return;
+          try {
+            if (msg.type === "welcome") {
+              myId = msg.id;
+              if (Array.isArray(msg.iceServers) && msg.iceServers.length) iceServers = msg.iceServers;
+              joined = true;
+              setStatus("LIVE", true);
+              if (els.chatMemberStatus) {
+                els.chatMemberStatus.textContent =
+                  `${msg.memberCount || 1} member${(msg.memberCount || 1) === 1 ? "" : "s"} in this meeting`;
+              }
+              els.title.textContent = `YSSAMOLA Member Meeting · ${roomCode}`;
+              resolve();
             }
 
-
-            try {
-
-              /*
-               * =================================================
-               * WELCOME
-               * =================================================
-               */
-
-              if (
-                message.type ===
-                  "welcome"
-              ) {
-
-                myId =
-                  message.id;
-
-                if (
-                  Array.isArray(
-                    message.iceServers
-                  ) &&
-                  message.iceServers.length
-                ) {
-
-                  iceServers =
-                    message.iceServers;
-                }
-
-
-                joined = true;
-
-                setStatus(
-                  "LIVE",
-                  true
-                );
-
-
-                els.title.textContent =
-                  `YSSAMOLA Member Meeting · ${roomCode}`;
-
-
-                if (!settled) {
-
-                  settled = true;
-
-                  resolve(true);
-                }
-
-
-                return;
+            if (msg.type === "peer-list") {
+              for (const peer of (msg.peers || [])) {
+                // The server sends the peer list to the NEW member.
+                // Therefore the new member is the deterministic offerer.
+                await makePeer(peer.id, peer.name, true);
               }
-
-
-              /*
-               * =================================================
-               * REJECT
-               * =================================================
-               */
-
-              if (
-                message.type ===
-                  "join-rejected"
-              ) {
-
-                if (!settled) {
-
-                  settled = true;
-
-                  reject(
-                    new Error(
-                      message.reason ||
-                      "Meeting code rejected."
-                    )
-                  );
-                }
-
-                return;
-              }
-
-
-              /*
-               * =================================================
-               * PEER LIST
-               * =================================================
-               */
-
-              if (
-                message.type ===
-                  "peer-list"
-              ) {
-
-                for (
-                  const peer
-                  of message.peers || []
-                ) {
-
-                  /*
-                   * The deterministic ID rule decides
-                   * which browser sends the offer.
-                   */
-                  await createPeer(
-                    peer.id,
-                    peer.name
-                  );
-                }
-
-                return;
-              }
-
-
-              /*
-               * =================================================
-               * NEW PEER
-               * =================================================
-               */
-
-              if (
-                message.type ===
-                  "peer-joined"
-              ) {
-
-                await createPeer(
-                  message.id,
-                  message.name
-                );
-
-                return;
-              }
-
-
-              /*
-               * =================================================
-               * OFFER
-               * =================================================
-               */
-
-              if (
-                message.type ===
-                  "offer"
-              ) {
-
-                const item =
-                  await createPeer(
-                    message.from,
-                    message.name
-                  );
-
-
-                const pc =
-                  item.pc;
-
-
-                /*
-                 * If this browser accidentally has a local
-                 * offer, rollback before accepting the remote
-                 * offer.
-                 */
-                if (
-                  pc.signalingState ===
-                    "have-local-offer"
-                ) {
-
-                  try {
-
-                    await pc.setLocalDescription({
-                      type: "rollback"
-                    });
-
-                  } catch {}
-                }
-
-
-                await pc.setRemoteDescription(
-                  message.offer
-                );
-
-
-                item.remoteDescriptionSet =
-                  true;
-
-
-                await flushCandidates(
-                  item
-                );
-
-
-                const answer =
-                  await pc.createAnswer();
-
-
-                await pc.setLocalDescription(
-                  answer
-                );
-
-
-                if (
-                  socket &&
-                  socket.readyState ===
-                    WebSocket.OPEN
-                ) {
-
-                  socket.send(
-                    JSON.stringify({
-                      type: "answer",
-
-                      to: message.from,
-
-                      answer:
-                        pc.localDescription
-                    })
-                  );
-                }
-
-
-                return;
-              }
-
-
-              /*
-               * =================================================
-               * ANSWER
-               * =================================================
-               */
-
-              if (
-                message.type ===
-                  "answer"
-              ) {
-
-                const item =
-                  peers.get(
-                    message.from
-                  );
-
-
-                if (!item) {
-                  return;
-                }
-
-
-                await item.pc.setRemoteDescription(
-                  message.answer
-                );
-
-
-                item.remoteDescriptionSet =
-                  true;
-
-
-                await flushCandidates(
-                  item
-                );
-
-
-                return;
-              }
-
-
-              /*
-               * =================================================
-               * ICE CANDIDATE
-               * =================================================
-               */
-
-              if (
-                message.type ===
-                  "candidate"
-              ) {
-
-                const item =
-                  peers.get(
-                    message.from
-                  );
-
-
-                if (!item) {
-                  return;
-                }
-
-
-                if (
-                  !item.remoteDescriptionSet
-                ) {
-
-                  item.pendingCandidates.push(
-                    message.candidate
-                  );
-
-                  return;
-                }
-
-
-                try {
-
-                  await item.pc.addIceCandidate(
-                    message.candidate
-                  );
-
-                } catch (error) {
-
-                  console.warn(
-                    "[ICE ADD ERROR]",
-                    error
-                  );
-                }
-
-
-                return;
-              }
-
-
-              /*
-               * =================================================
-               * PEER LEFT
-               * =================================================
-               */
-
-              if (
-                message.type ===
-                  "peer-left"
-              ) {
-
-                removePeer(
-                  message.id
-                );
-
-                return;
-              }
-
-
-              /*
-               * =================================================
-               * CHAT
-               * =================================================
-               */
-
-              if (
-                message.type ===
-                  "chat"
-              ) {
-
-                appendChatMessage(
-                  message
-                );
-
-                return;
-              }
-
-
-              /*
-               * =================================================
-               * CHAT HISTORY
-               * =================================================
-               */
-
-              if (
-                message.type ===
-                  "chat-history"
-              ) {
-
-                clearChatMessages();
-
-                for (
-                  const chatMessage
-                  of message.messages || []
-                ) {
-
-                  appendChatMessage(
-                    chatMessage
-                  );
-                }
-
-                return;
-              }
-
-            } catch (error) {
-
-              console.error(
-                "[MEETING MESSAGE ERROR]",
-                error
-              );
             }
-          };
+
+            // Backward compatibility with an older signaling message.
+            if (msg.type === "existing-peer") {
+              await makePeer(msg.id, msg.name, true);
+            }
+
+            if (msg.type === "peer-joined") {
+              // Existing members create no offer here. The newcomer is the
+              // deterministic offerer, preventing offer glare.
+              await makePeer(msg.id, msg.name, false);
+              if (els.chatMemberStatus) {
+                const count = 1 + peers.size;
+                els.chatMemberStatus.textContent =
+                  `${count} member${count === 1 ? "" : "s"} in this meeting`;
+              }
+            }
+
+            if (msg.type === "offer") {
+              const item = await makePeer(msg.from, msg.name, false);
+              await item.pc.setRemoteDescription(msg.offer);
+              item.remoteDescriptionSet = true;
+              for (const candidate of item.pendingCandidates.splice(0)) {
+                try { await item.pc.addIceCandidate(candidate); } catch (err) { console.warn("Queued ICE candidate failed", err); }
+              }
+              const answer = await item.pc.createAnswer();
+              await item.pc.setLocalDescription(answer);
+              socket.send(JSON.stringify({
+                type:"answer", to:msg.from, answer
+              }));
+            }
+
+            if (msg.type === "answer") {
+              const item = peers.get(msg.from);
+              if (item) {
+                await item.pc.setRemoteDescription(msg.answer);
+                item.remoteDescriptionSet = true;
+                item.iceRestartInProgress = false;
+
+                for (const candidate of item.pendingCandidates.splice(0)) {
+                  try { await item.pc.addIceCandidate(candidate); } catch (err) { console.warn("Queued ICE candidate failed", err); }
+                }
+              }
+            }
+
+            if (msg.type === "candidate") {
+              const item = peers.get(msg.from);
+              if (item && msg.candidate) {
+                if (item.remoteDescriptionSet) {
+                  try { await item.pc.addIceCandidate(msg.candidate); } catch (err) { console.warn("ICE candidate failed", err); }
+                } else {
+                  item.pendingCandidates.push(msg.candidate);
+                }
+              }
+            }
+
+            if (msg.type === "peer-left") removePeer(msg.id);
+
+            if (msg.type === "chat") {
+              appendChatMessage(msg);
+              openChatPanel();
+            }
+
+            if (msg.type === "chat-history") {
+              clearChatMessages();
+              (msg.messages || []).forEach(appendChatMessage);
+              if ((msg.messages || []).length) openChatPanel();
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        };
+      });
+    }
+
+    async function join(room) {
+      if (joined) return;
+
+      const name = els.name.value.trim();
+      roomCode = String(room || "").trim().replace(/\s+/g, "").toUpperCase();
+
+      if (!name) {
+        showMessage("Please enter your name.");
+        els.name.focus();
+        return;
       }
-    );
-  }
-
-
-  /*
-   * ============================================================
-   * JOIN
-   * ============================================================
-   */
-
-  async function joinMeeting(code) {
-
-    if (joined) {
-      return;
-    }
-
-
-    myName =
-      els.name.value.trim();
-
-
-    roomCode =
-      String(code || "")
-        .replace(/\s+/g, "")
-        .trim()
-        .toUpperCase();
-
-
-    if (!myName) {
-
-      showMessage(
-        "Please enter your name."
-      );
-
-      els.name.focus();
-
-      return;
-    }
-
-
-    if (!roomCode) {
-
-      showMessage(
-        "Please enter a meeting code."
-      );
-
-      els.code.focus();
-
-      return;
-    }
-
-
-    showMessage(
-      "Connecting to the meeting..."
-    );
-
-
-    try {
-
-      mediaReadyPromise =
-        getMedia();
-
-
-      const signaling =
-        connectSignaling();
-
-
-      const results =
-        await Promise.all([
-          mediaReadyPromise,
-          signaling
-        ]);
-
-
-      if (!results[0]) {
-
-        stopAll();
-
+      if (!roomCode) {
+        showMessage("Please enter a meeting code.");
+        els.code.focus();
         return;
       }
 
-
-      els.record?.classList.remove(
-        "is-hidden"
-      );
-
-
-      localStorage.setItem(
-        "yssamolaMeetingName",
-        myName
-      );
-
-
-      showMessage(
-        "Meeting connected. Camera and microphone are OFF."
-      );
-
-    } catch (error) {
-
-      console.error(
-        "[JOIN ERROR]",
-        error
-      );
-
-
-      showMessage(
-        error.message ||
-        "Could not join the meeting."
-      );
-
-
-      stopAll();
-    }
-  }
-
-
-  /*
-   * ============================================================
-   * CHAT
-   * ============================================================
-   */
-
-  function clearChatMessages() {
-
-    els.chatMessages.innerHTML = "";
-
-    const empty =
-      document.createElement("div");
-
-    empty.className =
-      "meeting-chat-empty";
-
-    empty.id = "chatEmpty";
-
-    empty.textContent =
-      "No messages yet. Start the conversation.";
-
-    els.chatMessages.appendChild(
-      empty
-    );
-  }
-
-
-  function appendChatMessage(message) {
-
-    if (!message?.text) {
-      return;
-    }
-
-
-    if (els.chatEmpty) {
-      els.chatEmpty.remove();
-    }
-
-
-    const row =
-      document.createElement("div");
-
-    row.className =
-      "meeting-chat-message" +
-      (
-        message.id === myId
-          ? " mine"
-          : ""
-      );
-
-
-    const meta =
-      document.createElement("div");
-
-    meta.className =
-      "meeting-chat-meta";
-
-    meta.textContent =
-      message.id === myId
-        ? "You"
-        : (
-            message.name ||
-            "Member"
-          );
-
-
-    const bubble =
-      document.createElement("div");
-
-    bubble.className =
-      "meeting-chat-bubble";
-
-    bubble.textContent =
-      message.text;
-
-
-    row.append(
-      meta,
-      bubble
-    );
-
-
-    els.chatMessages.appendChild(
-      row
-    );
-
-
-    els.chatMessages.scrollTop =
-      els.chatMessages.scrollHeight;
-  }
-
-
-  function openChatPanel() {
-
-    els.chatPanel.classList.add(
-      "open"
-    );
-
-    els.chat.setAttribute(
-      "aria-expanded",
-      "true"
-    );
-  }
-
-
-  /*
-   * ============================================================
-   * RECORDING
-   * ============================================================
-   */
-
-  function recordingMimeType() {
-
-    return [
-      "video/webm;codecs=vp9,opus",
-      "video/webm;codecs=vp8,opus",
-      "video/webm"
-    ].find(
-      type =>
-        window.MediaRecorder &&
-        MediaRecorder.isTypeSupported &&
-        MediaRecorder.isTypeSupported(type)
-    ) || "";
-  }
-
-
-  function setRecordingUI(recording) {
-
-    if (!els.record) {
-      return;
-    }
-
-
-    els.record.classList.toggle(
-      "recording",
-      recording
-    );
-
-
-    els.record.innerHTML =
-      recording
-        ? `<span class="meeting-record-compact__icon">⏹</span><span class="meeting-record-compact__text">Stop</span>`
-        : `<span class="meeting-record-compact__icon">⏺</span><span class="meeting-record-compact__text">Record</span>`;
-
-
-    els.recordStatus?.classList.toggle(
-      "show",
-      recording
-    );
-  }
-
-
-  function addRecordingAudio(stream) {
-
-    if (
-      !recordingAudioContext ||
-      !recordingAudioDestination ||
-      !stream ||
-      !stream.getAudioTracks().length
-    ) {
-      return;
-    }
-
-
-    try {
-
-      const source =
-        recordingAudioContext
-          .createMediaStreamSource(
-            stream
-          );
-
-      source.connect(
-        recordingAudioDestination
-      );
-
-      recordingAudioSources.push(
-        source
-      );
-
-    } catch {}
-  }
-
-
-  function setupRecordingAudio() {
-
-    try {
-
-      const AudioContext =
-        window.AudioContext ||
-        window.webkitAudioContext;
-
-
-      if (!AudioContext) {
-        return null;
+      const ok = await getMedia();
+      if (!ok) return;
+
+      showMessage("Connecting to the meeting...");
+      try {
+        await connectSignaling();
+        showMessage(`Joined room ${roomCode}. Waiting for other members...`);
+        els.record?.classList.remove("is-hidden");
+        localStorage.setItem("yssamolaMeetingName", name);
+      } catch (err) {
+        showMessage(err.message || "Could not join the meeting.");
+        stopAll();
       }
-
-
-      recordingAudioContext =
-        new AudioContext();
-
-
-      recordingAudioDestination =
-        recordingAudioContext
-          .createMediaStreamDestination();
-
-
-      addRecordingAudio(
-        localStream
-      );
-
-
-      peers.forEach(
-        peer =>
-          addRecordingAudio(
-            peer.video.srcObject
-          )
-      );
-
-
-      recordingAudioContext
-        .resume?.()
-        .catch(() => {});
-
-
-      return recordingAudioDestination
-        .stream
-        .getAudioTracks()[0] || null;
-
-    } catch {
-
-      return null;
-    }
-  }
-
-
-  function drawMeetingRecordingFrame() {
-
-    if (
-      !recordingCanvas ||
-      !recordingCtx
-    ) {
-      return;
     }
 
-
-    const root =
-      document.getElementById(
-        "meetingWindow"
-      );
-
-
-    const rect =
-      root?.getBoundingClientRect();
-
-
-    if (!rect) {
-      return;
-    }
-
-
-    const width =
-      recordingCanvas.width;
-
-    const height =
-      recordingCanvas.height;
-
-
-    recordingCtx.fillStyle =
-      "#111820";
-
-    recordingCtx.fillRect(
-      0,
-      0,
-      width,
-      height
-    );
-
-
-    const tiles =
-      [
-        ...document.querySelectorAll(
-          "#videoGrid .meeting-person"
-        )
+    function recordingMimeType() {
+      const types = [
+        "video/mp4;codecs=avc1,mp4a.40.2",
+        "video/mp4",
+        "video/webm;codecs=vp9,opus",
+        "video/webm;codecs=vp8,opus",
+        "video/webm"
       ];
-
-
-    const columns =
-      Math.min(
-        4,
-        Math.max(
-          1,
-          Math.ceil(
-            Math.sqrt(
-              tiles.length
-            )
-          )
-        )
-      );
-
-
-    const rows =
-      Math.ceil(
-        tiles.length /
-        columns
-      );
-
-
-    const gap = 8;
-
-    const top = 52;
-
-    const tileWidth =
-      (
-        width -
-        gap * (columns + 1)
-      ) /
-      columns;
-
-
-    const tileHeight =
-      (
-        height -
-        top -
-        gap * (rows + 1)
-      ) /
-      Math.max(1, rows);
-
-
-    tiles.forEach(
-      (tile, index) => {
-
-        const col =
-          index % columns;
-
-        const row =
-          Math.floor(
-            index / columns
-          );
-
-
-        const x =
-          gap +
-          col *
-            (tileWidth + gap);
-
-
-        const y =
-          top +
-          gap +
-          row *
-            (tileHeight + gap);
-
-
-        const video =
-          tile.querySelector(
-            "video"
-          );
-
-
-        recordingCtx.fillStyle =
-          "#202b35";
-
-        recordingCtx.fillRect(
-          x,
-          y,
-          tileWidth,
-          tileHeight
-        );
-
-
-        if (
-          video &&
-          video.readyState >= 2 &&
-          video.videoWidth
-        ) {
-
-          const scale =
-            Math.max(
-              tileWidth /
-                video.videoWidth,
-
-              tileHeight /
-                video.videoHeight
-            );
-
-
-          const dw =
-            video.videoWidth *
-            scale;
-
-
-          const dh =
-            video.videoHeight *
-            scale;
-
-
-          recordingCtx.save();
-
-          recordingCtx.beginPath();
-
-          recordingCtx.rect(
-            x,
-            y,
-            tileWidth,
-            tileHeight
-          );
-
-          recordingCtx.clip();
-
-
-          recordingCtx.drawImage(
-            video,
-            x +
-              (tileWidth - dw) /
-                2,
-            y +
-              (tileHeight - dh) /
-                2,
-            dw,
-            dh
-          );
-
-
-          recordingCtx.restore();
-        }
-      }
-    );
-
-
-    recordingAnimationFrame =
-      requestAnimationFrame(
-        drawMeetingRecordingFrame
-      );
-  }
-
-
-  async function startRecording() {
-
-    if (!joined) {
-
-      showMessage(
-        "Join the meeting first."
-      );
-
-      return;
+      return types.find(type => window.MediaRecorder?.isTypeSupported?.(type)) || "";
     }
 
-
-    if (!window.MediaRecorder) {
-
-      showMessage(
-        "Recording is not supported by this browser."
-      );
-
-      return;
+    function recordingExtension(mimeType) {
+      return mimeType && mimeType.startsWith("video/mp4") ? "mp4" : "webm";
     }
 
-
-    if (
-      !HTMLCanvasElement
-        .prototype
-        .captureStream
-    ) {
-
-      showMessage(
-        "Meeting recording is not supported by this browser."
-      );
-
-      return;
+    function setRecordingUI(recording) {
+      if (!els.record) return;
+      els.record.classList.toggle("recording", recording);
+      els.record.innerHTML = `<span class="meeting-record-compact__icon">${recording ? "⏹" : "⏺"}</span><span class="meeting-record-compact__text">${recording ? "Stop" : "Record"}</span>`;
+      els.record.setAttribute("aria-label", recording ? "Stop recording" : "Record meeting");
+      els.record.title = recording ? "Stop recording and save" : "Record meeting";
+      els.recordStatus?.classList.toggle("show", recording);
     }
 
+    function setupRecordingAudio() {
+      // Mix the local microphone and all currently connected remote audio tracks
+      // into one audio track for the meeting-area recording.
+      try {
+        if (!window.AudioContext && !window.webkitAudioContext) return null;
 
-    if (
-      mediaRecorder &&
-      mediaRecorder.state !==
-        "inactive"
-    ) {
-      return;
-    }
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        recordingAudioContext = new AudioCtx();
+        recordingAudioDestination = recordingAudioContext.createMediaStreamDestination();
+        recordingAudioSources = [];
 
-
-    try {
-
-      const root =
-        document.getElementById(
-          "meetingWindow"
-        );
-
-
-      const rect =
-        root.getBoundingClientRect();
-
-
-      recordingCanvas =
-        document.createElement(
-          "canvas"
-        );
-
-
-      recordingCanvas.width =
-        Math.max(
-          640,
-          Math.floor(
-            rect.width
-          )
-        );
-
-
-      recordingCanvas.height =
-        Math.max(
-          360,
-          Math.floor(
-            rect.height
-          )
-        );
-
-
-      recordingCtx =
-        recordingCanvas.getContext(
-          "2d"
-        );
-
-
-      recordingChunks = [];
-
-      recordingStartedAt =
-        Date.now();
-
-
-      recordingStream =
-        recordingCanvas.captureStream(
-          30
-        );
-
-
-      const audioTrack =
-        setupRecordingAudio();
-
-
-      if (audioTrack) {
-
-        recordingStream.addTrack(
-          audioTrack
-        );
-      }
-
-
-      const mime =
-        recordingMimeType();
-
-
-      mediaRecorder =
-        new MediaRecorder(
-          recordingStream,
-          mime
-            ? { mimeType: mime }
-            : undefined
-        );
-
-
-      mediaRecorder.ondataavailable =
-        event => {
-
-          if (event.data?.size) {
-
-            recordingChunks.push(
-              event.data
-            );
+        const addStreamAudio = (stream) => {
+          if (!stream || !stream.getAudioTracks().length) return;
+          try {
+            const source = recordingAudioContext.createMediaStreamSource(stream);
+            source.connect(recordingAudioDestination);
+            recordingAudioSources.push(source);
+          } catch (err) {
+            console.warn("Could not add audio stream to recording:", err);
           }
         };
 
+        // The local track is normally OFF when members join, which is intentional.
+        // If the member turns the microphone on, this same track is included.
+        addStreamAudio(localStream);
 
-      mediaRecorder.onstop =
-        () => {
+        // Each remote video element receives the remote MediaStream.
+        peers.forEach(item => {
+          addStreamAudio(item.video?.srcObject);
+        });
 
-          cancelAnimationFrame(
-            recordingAnimationFrame
-          );
+        recordingAudioContext.resume?.().catch(() => {});
+        return recordingAudioDestination.stream.getAudioTracks()[0] || null;
+      } catch (err) {
+        console.warn("Recording audio setup failed:", err);
+        try { recordingAudioContext?.close(); } catch {}
+        recordingAudioContext = null;
+        recordingAudioDestination = null;
+        recordingAudioSources = [];
+        return null;
+      }
+    }
 
+    function drawMeetingRecordingFrame() {
+      if (!recordingCanvas || !recordingCtx) return;
 
-          const blob =
-            new Blob(
-              recordingChunks,
-              {
-                type:
-                  recordingChunks[0]?.type ||
-                  mime ||
-                  "video/webm"
-              }
-            );
+      const root = document.getElementById("meetingWindow");
+      if (!root) return;
+      const rect = root.getBoundingClientRect();
+      const W = recordingCanvas.width;
+      const H = recordingCanvas.height;
+      const scaleX = W / Math.max(1, rect.width);
+      const scaleY = H / Math.max(1, rect.height);
+      const ctx = recordingCtx;
 
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.scale(scaleX, scaleY);
 
-          try {
-            recordingStream
-              ?.getTracks()
-              .forEach(
-                track =>
-                  track.stop()
-              );
-          } catch {}
+      // Meeting background.
+      ctx.fillStyle = "#111820";
+      ctx.fillRect(0, 0, rect.width, rect.height);
 
+      // Header.
+      ctx.fillStyle = "#17212b";
+      ctx.fillRect(0, 0, rect.width, 46);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "600 13px Poppins, Arial, sans-serif";
+      ctx.fillText("Amola Yuva Shakti Mandal Samiti · Member Meeting", 16, 28);
 
-          try {
-            recordingAudioContext
-              ?.close();
-          } catch {}
+      // LIVE indicator.
+      ctx.beginPath();
+      ctx.fillStyle = "#b51f2a";
+      ctx.roundRect(Math.max(16, rect.width - 102), 9, 86, 28, 14);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "700 10px Poppins, Arial, sans-serif";
+      ctx.fillText("●  LIVE", Math.max(27, rect.width - 92), 27);
 
+      const grid = document.getElementById("videoGrid");
+      const tiles = grid ? [...grid.querySelectorAll(".meeting-person")] : [];
+      const chatMessages = [...document.querySelectorAll("#meetingChatMessages .meeting-chat-message")];
+      const hasChat = chatMessages.length > 0;
+      const top = 56;
+      const bottom = 64;
+      const gap = 8;
+      const chatGap = hasChat ? 12 : 0;
+      const chatW = hasChat ? Math.min(260, Math.max(190, rect.width * 0.21)) : 0; // 70% of the previous chat width
+      // Reserve a dedicated right column for chat so it never covers participant video.
+      const videoAreaX = 0;
+      const videoAreaW = Math.max(180, rect.width - chatW - chatGap);
+      const availableH = Math.max(180, rect.height - top - bottom);
+      // Use a stable, predictable grid for any number of members.
+      // Columns are chosen from the available video-area aspect ratio, capped at 4,
+      // so adding members creates new rows instead of overlapping or shifting chat.
+      const memberCount = Math.max(1, tiles.length);
+      const targetAspect = Math.max(1, videoAreaW / availableH);
+      const suggestedCols = Math.ceil(Math.sqrt(memberCount * targetAspect));
+      const cols = Math.max(1, Math.min(4, suggestedCols));
+      const rows = Math.max(1, Math.ceil(memberCount / cols));
+      const tileW = Math.max(80, (videoAreaW - gap * (cols + 1)) / cols);
+      const tileH = Math.max(70, (availableH - gap * (rows + 1)) / rows);
 
+      const roundRect = (x,y,w,h,r,fill,stroke) => {
+        ctx.beginPath();
+        ctx.roundRect(x,y,w,h,r);
+        if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+        if (stroke) { ctx.strokeStyle = stroke; ctx.stroke(); }
+      };
+
+      const drawCover = (video, x, y, w, h) => {
+        if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return false;
+        const vw = video.videoWidth, vh = video.videoHeight;
+        const scale = Math.max(w / vw, h / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const dx = x + (w - dw) / 2, dy = y + (h - dh) / 2;
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(x,y,w,h,10);
+        ctx.clip();
+        ctx.drawImage(video, dx, dy, dw, dh);
+        ctx.restore();
+        return true;
+      };
+
+      tiles.forEach((tile, index) => {
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const x = videoAreaX + gap + col * (tileW + gap);
+        const y = top + gap + row * (tileH + gap);
+        roundRect(x,y,tileW,tileH,10,"#202b35","rgba(255,255,255,.08)");
+
+        const video = tile.querySelector("video");
+        const hasVideo = drawCover(video, x, y, tileW, tileH);
+        if (!hasVideo) {
+          const avatar = tile.querySelector(".person-avatar");
+          const letter = (avatar?.textContent || tile.querySelector(".person-name")?.textContent || "M").trim().charAt(0).toUpperCase() || "M";
+          ctx.fillStyle = "#354552";
+          ctx.beginPath();
+          ctx.arc(x + tileW/2, y + tileH/2 - 4, Math.min(34, tileH*.18), 0, Math.PI*2);
+          ctx.fill();
+          ctx.fillStyle = "#fff";
+          ctx.font = "700 28px Poppins, Arial, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(letter, x + tileW/2, y + tileH/2 + 6);
+          ctx.textAlign = "left";
+        }
+
+        const name = tile.querySelector(".person-name")?.textContent?.trim() || "Member";
+        roundRect(x+8, y+tileH-34, Math.min(tileW-16, 170), 25, 8, "rgba(0,0,0,.62)");
+        ctx.fillStyle = "#fff";
+        ctx.font = "600 10px Poppins, Arial, sans-serif";
+        ctx.fillText(name.slice(0,26), x+16, y+tileH-18);
+      });
+
+      // Bottom controls.
+      const controls = ["🎙", "📹", "🖥", "💬", "☎"];
+      const controlW = 42, controlGap = 9;
+      const total = controls.length*controlW + (controls.length-1)*controlGap;
+      let cx = (rect.width-total)/2;
+      controls.forEach((icon,i) => {
+        ctx.beginPath();
+        ctx.fillStyle = i === 4 ? "#c62828" : "#26343f";
+        ctx.arc(cx + controlW/2, rect.height-24, controlW/2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.font = "17px Arial";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#fff";
+        ctx.fillText(icon, cx+controlW/2, rect.height-18);
+        cx += controlW + controlGap;
+      });
+      ctx.textAlign = "left";
+
+      // Recording indicator.
+      roundRect(14, 54, 92, 24, 8, "rgba(170,20,30,.92)");
+      ctx.fillStyle = "#fff";
+      ctx.font = "700 9px Poppins, Arial, sans-serif";
+      ctx.fillText("● RECORDING", 23, 70);
+
+      // Dedicated chat column: keep chat history visible without covering video.
+      if (hasChat) {
+        const px = rect.width - chatW;
+        const py = 54;
+        const ph = Math.max(120, rect.height - 112);
+        roundRect(px, py, chatW, ph, 12, "#0d141b", "rgba(255,255,255,.10)");
+        ctx.fillStyle = "#fff";
+        ctx.font = "700 12px Poppins, Arial, sans-serif";
+        ctx.fillText("💬 Meeting Chat", px + 14, py + 22);
+        ctx.fillStyle = "#9da8b5";
+        ctx.font = "600 9px Poppins, Arial, sans-serif";
+        ctx.textAlign = "right";
+        ctx.fillText("History", px + chatW - 14, py + 22);
+        ctx.textAlign = "left";
+
+        const rows = chatMessages.slice(-35);
+        let cy = py + 46;
+        rows.forEach(row => {
+          if (cy > py + ph - 34) return;
+          const meta = row.querySelector(".meeting-chat-meta")?.textContent || "Member";
+          const msgText = row.querySelector(".meeting-chat-bubble")?.textContent || "";
+          const mine = row.classList.contains("mine");
+          ctx.fillStyle = mine ? "#f4a51c" : "#9aa7b4";
+          ctx.font = "600 8px Poppins, Arial, sans-serif";
+          ctx.fillText(meta.slice(0, 32), px + 14, cy);
+          cy += 12;
+
+          const maxChars = Math.max(18, Math.floor((chatW - 30) / 6.1));
+          const words = String(msgText).split(/\s+/), lines = [];
+          let line = "";
+          for (const word of words) {
+            const test = line ? line + " " + word : word;
+            if (test.length > maxChars && line) { lines.push(line); line = word; }
+            else line = test;
+          }
+          if (line) lines.push(line);
+          const shown = lines.slice(0, 3);
+          const bh = shown.length * 12 + 10;
+          roundRect(px + 10, cy - 8, chatW - 20, bh, 8, mine ? "#315c80" : "#26313d");
+          ctx.fillStyle = "#fff";
+          ctx.font = "500 8.5px Poppins, Arial, sans-serif";
+          shown.forEach((ln, j) => ctx.fillText(ln, px + 18, cy + 1 + j * 12));
+          cy += bh + 8;
+        });
+      }
+
+      ctx.restore();
+      recordingAnimationFrame = requestAnimationFrame(drawMeetingRecordingFrame);
+    }
+
+    async function startRecording() {
+      if (!joined) {
+        showMessage("Join the meeting first.");
+        return;
+      }
+      if (!window.MediaRecorder) {
+        showMessage("Recording is not supported by this browser.");
+        return;
+      }
+      if (!HTMLCanvasElement.prototype.captureStream) {
+        showMessage("This mobile browser does not support meeting-area recording. Please use the latest Chrome or Safari version.");
+        return;
+      }
+      if (mediaRecorder && mediaRecorder.state !== "inactive") return;
+
+      try {
+        const root = document.getElementById("meetingWindow");
+        if (!root) throw new Error("Meeting window was not found.");
+
+        const rect = root.getBoundingClientRect();
+        const scale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+        recordingCanvas = document.createElement("canvas");
+        recordingCanvas.width = Math.max(2, Math.floor(rect.width * scale));
+        recordingCanvas.height = Math.max(2, Math.floor(rect.height * scale));
+        recordingCanvas.style.width = `${rect.width}px`;
+        recordingCanvas.style.height = `${rect.height}px`;
+        recordingCtx = recordingCanvas.getContext("2d", { alpha:false });
+        if (!recordingCtx) throw new Error("Could not create recording canvas.");
+
+        recordingStartedAt = Date.now();
+        recordingChunks = [];
+        recordingStopRequested = false;
+
+        // IMPORTANT: mobile uses exactly the same meeting-area recording path
+        // as desktop. Do not fall back to getDisplayMedia(), because that
+        // creates a separate mobile screen-capture session which can end
+        // immediately on some phones and can capture the wrong content.
+        recordingStream = recordingCanvas.captureStream(30);
+        if (!recordingStream || !recordingStream.getVideoTracks().length) {
+          throw new Error("The browser could not create a meeting recording stream.");
+        }
+
+        const audioTrack = setupRecordingAudio();
+        if (audioTrack) recordingStream.addTrack(audioTrack);
+
+        const mimeType = recordingMimeType();
+        const options = mimeType ? { mimeType } : undefined;
+        mediaRecorder = new MediaRecorder(recordingStream, options);
+
+        mediaRecorder.ondataavailable = event => {
+          if (event.data && event.data.size > 0) recordingChunks.push(event.data);
+        };
+
+        mediaRecorder.onerror = event => {
+          console.error("MediaRecorder error:", event.error || event);
+          showMessage("Recording error occurred. Please try recording again.");
+        };
+
+        mediaRecorder.onstop = () => {
+          cancelAnimationFrame(recordingAnimationFrame);
+          recordingAnimationFrame = 0;
+
+          const finalMime = recordingChunks[0]?.type || mimeType || "video/webm";
+          const chunks = recordingChunks.slice();
+          recordingChunks = [];
+
+          // Cleanup only after MediaRecorder has delivered its final data.
+          const tracks = recordingStream ? recordingStream.getTracks() : [];
+          tracks.forEach(track => { try { track.stop(); } catch {} });
+          recordingStream = null;
+          try { recordingAudioContext?.close(); } catch {}
           recordingAudioContext = null;
           recordingAudioDestination = null;
           recordingAudioSources = [];
-
-          recordingStream = null;
-
           recordingCanvas = null;
           recordingCtx = null;
-
           mediaRecorder = null;
 
+          const blob = new Blob(chunks, { type: finalMime });
           setRecordingUI(false);
-
+          els.record?.removeAttribute("disabled");
 
           if (!blob.size) {
-
-            showMessage(
-              "Recording stopped, but no video data was produced."
-            );
-
+            showMessage("Recording stopped, but no video data was produced. Please try again.");
             return;
           }
 
-
-          const stamp =
-            new Date(
-              recordingStartedAt
-            )
-              .toISOString()
-              .replace(
-                /[:.]/g,
-                "-"
-              );
-
-
-          const safeRoom =
-            (
-              roomCode ||
-              "meeting"
-            )
-              .replace(
-                /[^A-Z0-9_-]/gi,
-                "-"
-              );
-
-
-          const url =
-            URL.createObjectURL(
-              blob
-            );
-
-
-          const link =
-            document.createElement(
-              "a"
-            );
-
-
-          link.href = url;
-
-          link.download =
-            `YSSAMOLA-${safeRoom}-${stamp}.webm`;
-
-
-          document.body.appendChild(
-            link
-          );
-
-
-          link.click();
-
-          link.remove();
-
-
-          setTimeout(
-            () =>
-              URL.revokeObjectURL(
-                url
-              ),
-            15000
-          );
-
+          // A recording that reaches onstop unexpectedly is still saved if it
+          // contains valid data. This prevents mobile browsers from silently
+          // losing a usable recording.
+          const stamp = new Date(recordingStartedAt || Date.now()).toISOString().replace(/[:.]/g, "-");
+          const safeRoom = (roomCode || "meeting").replace(/[^A-Z0-9_-]/gi, "-");
+          const extension = recordingExtension(finalMime);
+          const filename = `YSSAMOLA-${safeRoom}-${stamp}.${extension}`;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          a.rel = "noopener";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 15000);
 
           showMessage(
-            "Recording saved successfully."
+            extension === "mp4"
+              ? `Recording saved as ${filename}`
+              : `Recording saved as ${filename}. This browser uses WebM because MP4 recording is not supported.`
           );
         };
 
+        // Start WITHOUT a timeslice. This is more reliable on mobile Safari
+        // and Chrome and ensures Stop produces one complete final file.
+        mediaRecorder.start();
+        setRecordingUI(true);
+        drawMeetingRecordingFrame();
+        showMessage(
+          mimeType.startsWith("video/mp4")
+            ? "Recording started. Tap Stop when the meeting is finished."
+            : "Recording started. Tap Stop when the meeting is finished. The file will be saved as WebM."
+        );
+      } catch (err) {
+        cancelAnimationFrame(recordingAnimationFrame);
+        recordingAnimationFrame = 0;
+        if (recordingStream) recordingStream.getTracks().forEach(track => { try { track.stop(); } catch {} });
+        recordingStream = null;
+        recordingCtx = null;
+        recordingCanvas = null;
+        try { recordingAudioContext?.close(); } catch {}
+        recordingAudioContext = null;
+        recordingAudioDestination = null;
+        recordingAudioSources = [];
+        mediaRecorder = null;
+        setRecordingUI(false);
+        els.record?.removeAttribute("disabled");
+        showMessage("Could not start meeting-area recording: " + (err?.message || err?.name || "unknown error"));
+      }
+    }
 
-      mediaRecorder.start();
+    function stopRecording() {
+      const recorder = mediaRecorder;
+      if (!recorder || recorder.state === "inactive") return;
 
+      recordingStopRequested = true;
       setRecordingUI(true);
+      els.record?.setAttribute("disabled", "disabled");
+      els.record?.setAttribute("aria-label", "Stopping recording");
+      els.record?.setAttribute("title", "Finishing recording...");
 
-      drawMeetingRecordingFrame();
+      try {
+        if (typeof recorder.requestData === "function") recorder.requestData();
+      } catch {}
 
-      showMessage(
-        "Recording started."
-      );
+      try {
+        recorder.stop();
+      } catch {
+        if (recorder.state !== "inactive") {
+          showMessage("Could not stop recording. Please tap Stop once more.");
+        }
+      }
 
-    } catch (error) {
-
-      console.error(
-        "[RECORDING ERROR]",
-        error
-      );
-
-      showMessage(
-        "Could not start recording: " +
-        (
-          error.message ||
-          error.name ||
-          "unknown error"
-        )
-      );
-    }
-  }
-
-
-  function stopRecording() {
-
-    if (
-      !mediaRecorder ||
-      mediaRecorder.state ===
-        "inactive"
-    ) {
-      return;
+      // Do NOT stop recordingStream here. The onstop handler must receive the
+      // final media data first, then it stops the tracks and downloads the file.
+      cancelAnimationFrame(recordingAnimationFrame);
+      recordingAnimationFrame = 0;
     }
 
-
-    try {
-      mediaRecorder.stop();
-    } catch {}
-  }
-
-
-  /*
-   * ============================================================
-   * SCREEN SHARING
-   * ============================================================
-   */
-
-  async function toggleScreenShare() {
-
-    if (!localStream) {
-
-      showMessage(
-        "Join the meeting first."
-      );
-
-      return;
+    function stopAll() {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") stopRecording();
+      joined = false;
+      els.record?.classList.add("is-hidden");
+      els.chatPanel.classList.remove("open");
+      els.chat.setAttribute("aria-expanded", "false");
+      clearChatMessages();
+      const empty = document.createElement("div");
+      empty.className = "meeting-chat-empty";
+      empty.id = "chatEmpty";
+      empty.textContent = "No messages yet. Start the conversation.";
+      els.chatMessages.appendChild(empty);
+      peers.forEach((_, id) => removePeer(id));
+      if (socket) {
+        try { socket.close(); } catch {}
+        socket = null;
+      }
+      if (screenStream) {
+        screenStream.getTracks().forEach(t => t.stop());
+        screenStream = null;
+      }
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+      }
+      els.localVideo.srcObject = null;
+      addLocalPlaceholder();
+      setStatus("READY");
     }
 
+    els.form.addEventListener("submit", e => {
+      e.preventDefault();
+      join(els.code.value);
+    });
 
-    if (
-      screenStream
-    ) {
+    els.start.addEventListener("click", () => {
+      showMessage("Use the official meeting code supplied by the Samiti administrator.");
+      els.code.focus();
+    });
 
-      stopScreenShare();
+    els.test.addEventListener("click", async () => {
+      if (localStream) {
+        showMessage("Camera and microphone are already active.");
+        return;
+      }
+      els.name.value = els.name.value || localStorage.getItem("yssamolaMeetingName") || "";
+      await getMedia();
+    });
 
-      return;
-    }
+    els.mic.addEventListener("click", () => {
+      const track = localStream?.getAudioTracks()[0];
+      if (!track) return showMessage("Join the meeting first.");
+      track.enabled = !track.enabled;
+      els.mic.textContent = track.enabled ? "🎙" : "🔇";
+      els.localMic.textContent = track.enabled ? "🎙" : "🔇";
+      els.mic.classList.toggle("active", !track.enabled);
+    });
 
+    els.camera.addEventListener("click", () => {
+      const track = localStream?.getVideoTracks()[0];
+      if (!track) return showMessage("Join the meeting first.");
+      track.enabled = !track.enabled;
+      els.camera.textContent = track.enabled ? "📹" : "🚫";
+      els.camera.classList.toggle("active", !track.enabled);
+      if (track.enabled) {
+        els.localVideo.classList.add("active");
+        els.localAvatar.style.display = "none";
+      } else {
+        els.localVideo.classList.remove("active");
+        els.localAvatar.style.display = "flex";
+      }
+    });
 
-    if (
-      !navigator.mediaDevices?.getDisplayMedia
-    ) {
+    els.screen.addEventListener("click", async () => {
+      if (!localStream) return showMessage("Join the meeting first.");
+      if (!navigator.mediaDevices?.getDisplayMedia) {
+        return showMessage("Screen sharing is not supported by this browser.");
+      }
 
-      showMessage(
-        "Screen sharing is not supported by this browser."
-      );
+      try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({video:true});
+        const screenTrack = screenStream.getVideoTracks()[0];
 
-      return;
-    }
-
-
-    try {
-
-      screenStream =
-        await navigator.mediaDevices.getDisplayMedia({
-          video: {
-            frameRate: {
-              ideal: 15,
-              max: 20
-            }
-          },
-          audio: false
+        peers.forEach(({pc}) => {
+          const sender = pc.getSenders().find(s => s.track?.kind === "video");
+          if (sender) {
+            sender.replaceTrack(screenTrack);
+            tuneSender(sender, "video");
+            try { screenTrack.contentHint = "detail"; } catch {}
+          }
         });
 
-
-      const screenTrack =
-        screenStream.getVideoTracks()[0];
-
-
-      for (
-        const peer
-        of peers.values()
-      ) {
-
-        const sender =
-          peer.pc
-            .getSenders()
-            .find(
-              s =>
-                s.track?.kind ===
-                "video"
-            );
-
-
-        if (sender) {
-
-          await sender.replaceTrack(
-            screenTrack
-          );
-        }
-      }
-
-
-      els.localVideo.srcObject =
-        screenStream;
-
-
-      els.screen.classList.add(
-        "active"
-      );
-
-
-      screenTrack.onended =
-        () => {
-
-          stopScreenShare();
+        els.localVideo.srcObject = screenStream;
+        screenTrack.onended = async () => {
+          const cameraTrack = localStream.getVideoTracks()[0];
+          peers.forEach(({pc}) => {
+            const sender = pc.getSenders().find(s => s.track?.kind === "video");
+            if (sender) {
+              sender.replaceTrack(cameraTrack);
+              tuneSender(sender, "camera");
+            }
+          });
+          els.localVideo.srcObject = localStream;
+          screenStream = null;
         };
-
-
-      showMessage(
-        "Screen sharing started."
-      );
-
-    } catch {
-
-      screenStream = null;
-
-      showMessage(
-        "Screen sharing was cancelled or blocked."
-      );
-    }
-  }
-
-
-  async function stopScreenShare() {
-
-    if (!screenStream) {
-      return;
-    }
-
-
-    const cameraTrack =
-      localStream
-        ?.getVideoTracks()[0];
-
-
-    for (
-      const peer
-      of peers.values()
-    ) {
-
-      const sender =
-        peer.pc
-          .getSenders()
-          .find(
-            s =>
-              s.track?.kind ===
-              "video"
-          );
-
-
-      if (
-        sender &&
-        cameraTrack
-      ) {
-
-        try {
-
-          await sender.replaceTrack(
-            cameraTrack
-          );
-
-        } catch {}
+      } catch (err) {
+        showMessage("Screen sharing was cancelled or blocked.");
       }
+    });
+
+    function openChatPanel() {
+      els.chatPanel.classList.add("open");
+      els.chat.setAttribute("aria-expanded", "true");
+      requestAnimationFrame(() => {
+        els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
+      });
     }
 
-
-    screenStream
-      .getTracks()
-      .forEach(
-        track =>
-          track.stop()
-      );
-
-
-    screenStream = null;
-
-
-    els.localVideo.srcObject =
-      localStream;
-
-
-    els.screen.classList.remove(
-      "active"
-    );
-
-
-    const cameraEnabled =
-      cameraTrack?.enabled;
-
-
-    els.localVideo.classList.toggle(
-      "active",
-      !!cameraEnabled
-    );
-
-
-    els.localAvatar.style.display =
-      cameraEnabled
-        ? "none"
-        : "flex";
-  }
-
-
-  /*
-   * ============================================================
-   * STOP EVERYTHING
-   * ============================================================
-   */
-
-  function stopAll() {
-
-    joined = false;
-
-
-    mediaReadyPromise = null;
-
-
-    if (
-      mediaRecorder &&
-      mediaRecorder.state !==
-        "inactive"
-    ) {
-
-      try {
-        mediaRecorder.stop();
-      } catch {}
+    function clearChatMessages() {
+      els.chatMessages.innerHTML = "";
     }
 
-
-    for (
-      const id
-      of [...peers.keys()]
-    ) {
-
-      removePeer(id);
+    function appendChatMessage(msg) {
+      if (!msg || !msg.text) return;
+      if (els.chatEmpty?.parentNode) els.chatEmpty.remove();
+      const row = document.createElement("div");
+      row.className = "meeting-chat-message" + (msg.id === myId ? " mine" : "");
+      const meta = document.createElement("div");
+      meta.className = "meeting-chat-meta";
+      meta.textContent = msg.id === myId ? "You" : (msg.name || "Member");
+      const bubble = document.createElement("div");
+      bubble.className = "meeting-chat-bubble";
+      bubble.textContent = msg.text;
+      row.append(meta, bubble);
+      els.chatMessages.appendChild(row);
+      els.chatMessages.scrollTop = els.chatMessages.scrollHeight;
     }
 
-
-    if (socket) {
-
-      try {
-        socket.close();
-      } catch {}
-
-      socket = null;
-    }
-
-
-    if (screenStream) {
-
-      screenStream
-        .getTracks()
-        .forEach(
-          track =>
-            track.stop()
-        );
-
-      screenStream = null;
-    }
-
-
-    if (localStream) {
-
-      localStream
-        .getTracks()
-        .forEach(
-          track =>
-            track.stop()
-        );
-
-      localStream = null;
-    }
-
-
-    els.localVideo.srcObject =
-      null;
-
-
-    els.localVideo.classList.remove(
-      "active"
-    );
-
-
-    els.localAvatar.style.display =
-      "flex";
-
-
-    els.record?.classList.add(
-      "is-hidden"
-    );
-
-
-    els.chatPanel.classList.remove(
-      "open"
-    );
-
-
-    els.chat.setAttribute(
-      "aria-expanded",
-      "false"
-    );
-
-
-    clearChatMessages();
-
-
-    setStatus("READY");
-  }
-
-
-  /*
-   * ============================================================
-   * BUTTONS
-   * ============================================================
-   */
-
-  els.form.addEventListener(
-    "submit",
-    event => {
-
-      event.preventDefault();
-
-      joinMeeting(
-        els.code.value
-      );
-    }
-  );
-
-
-  els.start.addEventListener(
-    "click",
-    () => {
-
-      showMessage(
-        "Use the official meeting code supplied by the Samiti administrator."
-      );
-
-      els.code.focus();
-    }
-  );
-
-
-  els.test.addEventListener(
-    "click",
-    async () => {
-
-      if (localStream) {
-
-        showMessage(
-          "Camera and microphone are already available."
-        );
-
-        return;
-      }
-
-
-      if (
-        !els.name.value
-      ) {
-
-        els.name.value =
-          localStorage.getItem(
-            "yssamolaMeetingName"
-          ) || "";
-      }
-
-
-      await getMedia();
-    }
-  );
-
-
-  /*
-   * Microphone
-   */
-
-  els.mic.addEventListener(
-    "click",
-    () => {
-
-      const track =
-        localStream
-          ?.getAudioTracks()[0];
-
-
-      if (!track) {
-
-        showMessage(
-          "Join the meeting first."
-        );
-
-        return;
-      }
-
-
-      track.enabled =
-        !track.enabled;
-
-
-      els.mic.textContent =
-        track.enabled
-          ? "🎙"
-          : "🔇";
-
-
-      els.localMic.textContent =
-        track.enabled
-          ? "🎙"
-          : "🔇";
-
-
-      els.mic.classList.toggle(
-        "active",
-        !track.enabled
-      );
-    }
-  );
-
-
-  /*
-   * Camera
-   */
-
-  els.camera.addEventListener(
-    "click",
-    () => {
-
-      const track =
-        localStream
-          ?.getVideoTracks()[0];
-
-
-      if (!track) {
-
-        showMessage(
-          "Join the meeting first."
-        );
-
-        return;
-      }
-
-
-      track.enabled =
-        !track.enabled;
-
-
-      els.camera.textContent =
-        track.enabled
-          ? "📹"
-          : "🚫";
-
-
-      els.camera.classList.toggle(
-        "active",
-        !track.enabled
-      );
-
-
-      els.localVideo.classList.toggle(
-        "active",
-        track.enabled
-      );
-
-
-      els.localAvatar.style.display =
-        track.enabled
-          ? "none"
-          : "flex";
-
-
-      if (track.enabled) {
-
-        els.localVideo
-          .play()
-          .catch(() => {});
-      }
-    }
-  );
-
-
-  /*
-   * Screen
-   */
-
-  els.screen.addEventListener(
-    "click",
-    toggleScreenShare
-  );
-
-
-  /*
-   * Chat
-   */
-
-  els.chat.addEventListener(
-    "click",
-    () => {
-
-      if (
-        els.chatPanel.classList.contains(
-          "open"
-        )
-      ) {
-
-        els.chatPanel.classList.remove(
-          "open"
-        );
-
-        els.chat.setAttribute(
-          "aria-expanded",
-          "false"
-        );
-
+    els.chat.addEventListener("click", () => {
+      if (els.chatPanel.classList.contains("open")) {
+        els.chatPanel.classList.remove("open");
+        els.chat.setAttribute("aria-expanded", "false");
       } else {
-
         openChatPanel();
-
         els.chatInput.focus();
       }
-    }
-  );
+    });
 
-
-  els.chatForm.addEventListener(
-    "submit",
-    event => {
-
-      event.preventDefault();
-
-
-      const text =
-        els.chatInput.value.trim();
-
-
-      if (
-        !text ||
-        !socket ||
-        socket.readyState !==
-          WebSocket.OPEN
-      ) {
-        return;
-      }
-
-
-      socket.send(
-        JSON.stringify({
-          type: "chat",
-          text
-        })
-      );
-
-
+    els.chatForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const text = els.chatInput.value.trim();
+      if (!text || socket?.readyState !== WebSocket.OPEN) return;
+      socket.send(JSON.stringify({ type:"chat", text }));
       els.chatInput.value = "";
-    }
-  );
+      els.chatInput.focus();
+      openChatPanel();
+    });
 
-
-  /*
-   * Recording
-   */
-
-  els.record.addEventListener(
-    "click",
-    () => {
-
-      if (
-        mediaRecorder &&
-        mediaRecorder.state !==
-          "inactive"
-      ) {
-
+    els.record.addEventListener("click", () => {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
         stopRecording();
-
       } else {
-
         startRecording();
       }
-    }
-  );
+    });
 
-
-  /*
-   * Leave
-   */
-
-  els.leave.addEventListener(
-    "click",
-    () => {
-
-      if (
-        socket &&
-        socket.readyState ===
-          WebSocket.OPEN
-      ) {
-
-        try {
-
-          socket.send(
-            JSON.stringify({
-              type: "leave"
-            })
-          );
-
-        } catch {}
-      }
-
-
+    els.leave.addEventListener("click", () => {
       stopAll();
+      showMessage("You left the meeting.");
+    });
 
+    window.addEventListener("beforeunload", stopAll);
 
-      showMessage(
-        "You left the meeting."
-      );
-    }
-  );
-
-
-  /*
-   * Browser close
-   */
-
-  window.addEventListener(
-    "beforeunload",
-    () => {
-
-      try {
-
-        if (
-          socket &&
-          socket.readyState ===
-            WebSocket.OPEN
-        ) {
-
-          socket.send(
-            JSON.stringify({
-              type: "leave"
-            })
-          );
-        }
-
-      } catch {}
-
-      stopAll();
-    }
-  );
-
-
-  /*
-   * ============================================================
-   * INITIAL VALUES
-   * ============================================================
-   */
-
-  els.name.value =
-    localStorage.getItem(
-      "yssamolaMeetingName"
-    ) || "";
-
-  els.code.value = "";
-
-})();
-</script>
+    // Restore only the member name. Never save or pre-fill the meeting code.
+    els.name.value = localStorage.getItem("yssamolaMeetingName") || "";
+    els.code.value = "";
+  })();
+  </script>
 
 
 
