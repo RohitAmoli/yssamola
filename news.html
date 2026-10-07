@@ -1031,7 +1031,15 @@
       pc.onicecandidateerror=ev=>console.warn("ICE candidate error",name,ev.errorCode,ev.errorText||"");
       pc.oniceconnectionstatechange=()=>{const s=pc.iceConnectionState;if(s==="connected"||s==="completed"){item.iceRestartInProgress=false;item.connectedAt=Date.now();if(item.retryTimer)clearTimeout(item.retryTimer)}else if(s==="disconnected")scheduleIceRestart(item,"disconnected");else if(s==="failed")scheduleIceRestart(item,"failed")};
       pc.onconnectionstatechange=()=>{const s=pc.connectionState;if(s==="connected"){item.iceRestartInProgress=false;item.connectedAt=Date.now();if(item.retryTimer)clearTimeout(item.retryTimer)}else if(s==="disconnected")scheduleIceRestart(item,"disconnected");else if(s==="failed")scheduleIceRestart(item,"failed");else if(s==="closed")removePeer(peerId)};
-      if(initiator){const offer=await pc.createOffer();await pc.setLocalDescription(offer);if(socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:"offer",to:peerId,offer:pc.localDescription}))}
+      if(initiator && joined && socket?.readyState===WebSocket.OPEN){
+        try{
+          const offer=await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          if(socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:"offer",to:peerId,offer:pc.localDescription}));
+        }catch(e){
+          console.error("Offer creation failed",peerId,e);
+        }
+      }
       return item;
     }
     async function flushCandidates(item){for(const c of item.pendingCandidates.splice(0)){try{await item.pc.addIceCandidate(c)}catch(e){console.warn("Queued ICE candidate failed",e)}}}
