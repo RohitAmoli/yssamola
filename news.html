@@ -1111,9 +1111,61 @@
     function removePeer(peerId) {
       const item = peers.get(peerId);
       if (!item) return;
+      if (item.retryTimer) clearTimeout(item.retryTimer);
       try { item.pc.close(); } catch {}
       item.tile?.remove();
       peers.delete(peerId);
+    }
+
+    async function restartPeerIce(item, reason = "connection") {
+      if (!item?.initiator || !item.pc || !joined) return;
+      const pc = item.pc;
+
+      if (item.retryTimer) {
+        clearTimeout(item.retryTimer);
+        item.retryTimer = null;
+      }
+
+      // Only the original offerer performs ICE-restart renegotiation.
+      // This prevents offer glare when both sides notice a bad connection.
+      if (item.iceRestartInProgress) return;
+
+      item.retryTimer = setTimeout(async () => {
+        item.retryTimer = null;
+
+        if (!joined || pc.connectionState === "connected" || pc.connectionState === "closed") return;
+
+        // A new ICE-restart offer requires a stable signaling state.
+        if (pc.signalingState !== "stable") {
+          // The current offer/answer exchange may still be completing.
+          // Try again shortly instead of creating a competing offer.
+          item.retryTimer = setTimeout(() => restartPeerIce(item, reason), 1200);
+          return;
+        }
+
+        if (socket?.readyState !== WebSocket.OPEN) return;
+
+        item.iceRestartInProgress = true;
+
+        try {
+          const offer = await pc.createOffer({ iceRestart: true });
+          await pc.setLocalDescription(offer);
+
+          if (socket?.readyState !== WebSocket.OPEN) return;
+
+          socket.send(JSON.stringify({
+            type: "offer",
+            to: item.peerId,
+            offer: pc.localDescription
+          }));
+
+          showMessage(`Reconnecting audio/video with ${item.name}...`);
+        } catch (err) {
+          console.warn(`ICE restart failed for ${item.name}:`, err);
+          item.iceRestartInProgress = false;
+          item.retryTimer = setTimeout(() => restartPeerIce(item, reason), 1800);
+        }
+      }, reason === "disconnected" ? 1400 : 500);
     }
 
     async function makePeer(peerId, name, initiator) {
@@ -1121,7 +1173,17 @@
 
       const pc = new RTCPeerConnection({ iceServers });
       const tile = createPeerTile(peerId, name);
-      const item = { pc, name, ...tile, pendingCandidates: [], remoteDescriptionSet: false };
+      const item = {
+        pc,
+        name,
+        peerId,
+        initiator: !!initiator,
+        ...tile,
+        pendingCandidates: [],
+        remoteDescriptionSet: false,
+        iceRestartInProgress: false,
+        retryTimer: null
+      };
       peers.set(peerId, item);
 
       if (localStream) {
@@ -1147,18 +1209,65 @@
         }
       };
 
-      pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "failed") {
-          showMessage(`Could not establish audio/video with ${name}. Check TURN settings on the meeting server.`);
-          pc.restartIce?.();
+      pc.onicecandidateerror = event => {
+        console.warn(`ICE candidate error for ${name}:`, event.errorCode, event.errorText || "");
+      };
+
+      pc.oniceconnectionstatechange = () => {
+        const state = pc.iceConnectionState;
+
+        if (state === "connected" || state === "completed") {
+          item.iceRestartInProgress = false;
+          if (item.retryTimer) {
+            clearTimeout(item.retryTimer);
+            item.retryTimer = null;
+          }
         }
-        if (pc.connectionState === "closed") removePeer(peerId);
+
+        if (state === "disconnected") {
+          restartPeerIce(item, "disconnected");
+        }
+
+        if (state === "failed") {
+          restartPeerIce(item, "failed");
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        const state = pc.connectionState;
+
+        if (state === "connected") {
+          item.iceRestartInProgress = false;
+          if (item.retryTimer) {
+            clearTimeout(item.retryTimer);
+            item.retryTimer = null;
+          }
+        }
+
+        if (state === "disconnected") {
+          restartPeerIce(item, "disconnected");
+        }
+
+        if (state === "failed") {
+          restartPeerIce(item, "failed");
+        }
+
+        if (state === "closed") {
+          if (item.retryTimer) clearTimeout(item.retryTimer);
+          removePeer(peerId);
+        }
       };
 
       if (initiator) {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        socket.send(JSON.stringify({type:"offer", to:peerId, offer}));
+        if (socket?.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type:"offer",
+            to:peerId,
+            offer:pc.localDescription
+          }));
+        }
       }
 
       return item;
@@ -1221,6 +1330,8 @@
               if (item) {
                 await item.pc.setRemoteDescription(msg.answer);
                 item.remoteDescriptionSet = true;
+                item.iceRestartInProgress = false;
+
                 for (const candidate of item.pendingCandidates.splice(0)) {
                   try { await item.pc.addIceCandidate(candidate); } catch (err) { console.warn("Queued ICE candidate failed", err); }
                 }
