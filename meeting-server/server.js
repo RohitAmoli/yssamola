@@ -1,48 +1,58 @@
-const http = require('http');
-const crypto = require('crypto');
-const { WebSocketServer } = require('ws');
+const http = require("http");
+const crypto = require("crypto");
+const { WebSocketServer } = require("ws");
 
 const PORT = Number(process.env.PORT || 10000);
-const MEETING_CODE = String(process.env.MEETING_CODE || '').trim().toUpperCase();
-const MAX_MEMBERS = Math.max(2, Number(process.env.MAX_MEMBERS || 30));
+const MEETING_CODE = String(process.env.MEETING_CODE || "")
+  .trim()
+  .toUpperCase();
+
+const MAX_MEMBERS = Math.max(
+  2,
+  Number(process.env.MAX_MEMBERS || 30)
+);
 
 const rooms = new Map();
 
 function splitUrls(value) {
-  return String(value || '')
-    .split(',')
+  return String(value || "")
+    .split(",")
     .map(v => v.trim())
     .filter(Boolean);
 }
 
-function iceServers() {
-  const list = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
+function getIceServers() {
+  const servers = [
+    {
+      urls: "stun:stun.l.google.com:19302"
+    },
+    {
+      urls: "stun:stun1.l.google.com:19302"
+    }
   ];
 
-  const urls = splitUrls(process.env.TURN_URLS);
-  const username = String(process.env.TURN_USERNAME || '').trim();
-  const credential = String(process.env.TURN_CREDENTIAL || '').trim();
+  const turnUrls = splitUrls(process.env.TURN_URLS);
+  const username = String(process.env.TURN_USERNAME || "").trim();
+  const credential = String(process.env.TURN_CREDENTIAL || "").trim();
 
-  if (urls.length && username && credential) {
-    list.push({
-      urls,
+  if (turnUrls.length && username && credential) {
+    servers.push({
+      urls: turnUrls,
       username,
       credential
     });
   }
 
-  return list;
+  return servers;
 }
 
 const server = http.createServer((req, res) => {
   res.writeHead(200, {
-    'Content-Type': 'text/plain; charset=utf-8',
-    'Cache-Control': 'no-store'
+    "Content-Type": "text/plain; charset=utf-8",
+    "Cache-Control": "no-store"
   });
 
-  res.end('YSSAMOLA signaling server is running.');
+  res.end("YSSAMOLA signaling server is running.");
 });
 
 const wss = new WebSocketServer({
@@ -50,206 +60,213 @@ const wss = new WebSocketServer({
   maxPayload: 1024 * 1024
 });
 
-function send(ws, payload) {
-  if (ws.readyState === 1) {
-    ws.send(JSON.stringify(payload));
-  }
+function send(ws, data) {
+  if (!ws || ws.readyState !== 1) return;
+
+  try {
+    ws.send(JSON.stringify(data));
+  } catch {}
 }
 
-function roomFor(client) {
-  return client.room ? rooms.get(client.room) : null;
+function getRoom(client) {
+  if (!client.roomCode) return null;
+  return rooms.get(client.roomCode) || null;
 }
 
 function leaveClient(client) {
-  const roomCode = client.room;
-  const room = roomFor(client);
+  const roomCode = client.roomCode;
+  if (!roomCode) return;
+
+  const room = rooms.get(roomCode);
 
   if (!room) {
-    client.room = null;
+    client.roomCode = null;
     return;
   }
 
   room.members.delete(client.id);
 
+  console.log(
+    `[LEAVE] ${client.id} "${client.name}" room=${roomCode} members=${room.members.size}`
+  );
+
   for (const member of room.members.values()) {
     send(member.ws, {
-      type: 'peer-left',
+      type: "peer-left",
       id: client.id
     });
   }
 
-  client.room = null;
   client.roomCode = null;
 
   if (room.members.size === 0) {
     rooms.delete(roomCode);
+
+    console.log(`[ROOM CLOSED] ${roomCode}`);
   }
 }
 
-wss.on('connection', ws => {
+wss.on("connection", ws => {
 
   const client = {
     id: crypto.randomUUID(),
-    name: 'Member',
-    room: null,
+    name: "Member",
     roomCode: null,
-    ws,
-    alive: true
+    ws
   };
 
   ws._yssamolaAlive = true;
 
-  ws.on('pong', () => {
-    client.alive = true;
+  console.log(`[CONNECT] ${client.id}`);
+
+  ws.on("pong", () => {
     ws._yssamolaAlive = true;
   });
 
-  ws.on('message', raw => {
+  ws.on("message", raw => {
 
-    let msg;
+    let message;
 
     try {
-      msg = JSON.parse(raw.toString());
+      message = JSON.parse(raw.toString());
     } catch {
       return;
     }
 
-    if (!msg || typeof msg.type !== 'string') {
+    if (!message || typeof message.type !== "string") {
       return;
     }
 
     /*
-     * ==========================================================
+     * =========================================================
      * JOIN
-     * ==========================================================
+     * =========================================================
      */
 
-    if (msg.type === 'join') {
+    if (message.type === "join") {
 
-      const code = String(msg.room || '')
+      const roomCode = String(message.room || "")
+        .replace(/\s+/g, "")
         .trim()
-        .replace(/\s+/g, '')
         .toUpperCase();
 
-      const name = String(msg.name || 'Member')
-        .trim()
-        .slice(0, 40) || 'Member';
+      const name =
+        String(message.name || "Member")
+          .trim()
+          .slice(0, 40) || "Member";
 
-      if (!MEETING_CODE || code !== MEETING_CODE) {
+      if (!MEETING_CODE) {
+
+        console.error(
+          "[JOIN ERROR] MEETING_CODE environment variable is empty"
+        );
 
         send(ws, {
-          type: 'join-rejected',
-          reason:
-            'Invalid meeting code. Please use the official YSSAMOLA meeting code.'
+          type: "join-rejected",
+          reason: "Meeting server is not configured."
         });
 
         return;
       }
 
-      /*
-       * Remove this client from any previous room.
-       */
+      if (roomCode !== MEETING_CODE) {
+
+        console.log(
+          `[JOIN REJECTED] ${client.id} invalid code`
+        );
+
+        send(ws, {
+          type: "join-rejected",
+          reason:
+            "Invalid meeting code. Please use the official YSSAMOLA meeting code."
+        });
+
+        return;
+      }
+
       leaveClient(client);
 
-      /*
-       * Create room if required.
-       */
-      if (!rooms.has(code)) {
-        rooms.set(code, {
+      if (!rooms.has(roomCode)) {
+        rooms.set(roomCode, {
           members: new Map(),
           chat: []
         });
       }
 
-      const room = rooms.get(code);
+      const room = rooms.get(roomCode);
 
-      /*
-       * Maximum members check.
-       */
       if (room.members.size >= MAX_MEMBERS) {
 
         send(ws, {
-          type: 'join-rejected',
+          type: "join-rejected",
           reason:
-            'This meeting is full. Please try again later.'
+            "This meeting is full. Please try again later."
         });
 
         return;
       }
 
-      /*
-       * ========================================================
-       * IMPORTANT FIX
-       *
-       * Add the new client to the room BEFORE sending the
-       * welcome message.
-       *
-       * The browser must receive "welcome" first so that its
-       * JavaScript sets:
-       *
-       *     joined = true
-       *
-       * BEFORE it receives "existing-peer".
-       *
-       * Otherwise makePeer() does not create the initial offer.
-       * ========================================================
-       */
-
-      client.room = code;
-      client.roomCode = code;
       client.name = name;
+      client.roomCode = roomCode;
 
+      /*
+       * Capture the existing participants BEFORE adding
+       * the new participant.
+       */
+      const existingMembers =
+        Array.from(room.members.values()).map(member => ({
+          id: member.id,
+          name: member.name
+        }));
+
+      /*
+       * Add new participant.
+       */
       room.members.set(client.id, client);
 
+      console.log(
+        `[JOIN] ${client.id} "${client.name}" room=${roomCode} members=${room.members.size}`
+      );
+
       /*
-       * 1. SEND WELCOME FIRST
+       * IMPORTANT:
+       * Welcome MUST be sent before peer-list.
        */
       send(ws, {
-        type: 'welcome',
+        type: "welcome",
         id: client.id,
-        room: code,
+        room: roomCode,
         memberCount: room.members.size,
-        iceServers: iceServers()
+        iceServers: getIceServers()
       });
 
       /*
-       * 2. SEND CHAT HISTORY
+       * Send existing participants in ONE message.
+       *
+       * This removes the old existing-peer timing race.
        */
       send(ws, {
-        type: 'chat-history',
+        type: "peer-list",
+        peers: existingMembers
+      });
+
+      /*
+       * Restore chat history.
+       */
+      send(ws, {
+        type: "chat-history",
         messages: room.chat
       });
 
       /*
-       * 3. NOW SEND EXISTING PEERS
-       *
-       * At this point the browser has already received welcome
-       * and therefore has joined=true.
+       * Tell existing members about new member.
        */
-      for (const [id, member] of room.members) {
+      for (const member of room.members.values()) {
 
-        if (id === client.id) {
-          continue;
-        }
-
-        send(ws, {
-          type: 'existing-peer',
-          id,
-          name: member.name
-        });
-      }
-
-      /*
-       * 4. TELL EXISTING MEMBERS ABOUT THE NEW MEMBER
-       */
-      for (const [id, member] of room.members) {
-
-        if (id === client.id) {
-          continue;
-        }
+        if (member.id === client.id) continue;
 
         send(member.ws, {
-          type: 'peer-joined',
+          type: "peer-joined",
           id: client.id,
           name: client.name,
           memberCount: room.members.size
@@ -260,132 +277,135 @@ wss.on('connection', ws => {
     }
 
     /*
-     * ==========================================================
+     * =========================================================
      * LEAVE
-     * ==========================================================
+     * =========================================================
      */
 
-    if (msg.type === 'leave') {
+    if (message.type === "leave") {
       leaveClient(client);
       return;
     }
 
-    const room = roomFor(client);
+    const room = getRoom(client);
 
     if (!room) {
       return;
     }
 
     /*
-     * ==========================================================
+     * =========================================================
      * WEBRTC SIGNALING
-     * ==========================================================
+     * =========================================================
      */
 
     if (
-      msg.type === 'offer' ||
-      msg.type === 'answer' ||
-      msg.type === 'candidate'
+      message.type === "offer" ||
+      message.type === "answer" ||
+      message.type === "candidate"
     ) {
 
-      const targetId = String(msg.to || '');
+      const targetId = String(message.to || "");
+
+      if (!targetId) return;
 
       const target = room.members.get(targetId);
 
       if (!target) {
+        console.log(
+          `[SIGNAL DROP] target=${targetId} not found`
+        );
         return;
       }
 
-      const payload = {
-        type: msg.type,
+      const outgoing = {
+        type: message.type,
         from: client.id,
         name: client.name
       };
 
-      if (msg.offer) {
-        payload.offer = msg.offer;
+      if (message.offer) {
+        outgoing.offer = message.offer;
       }
 
-      if (msg.answer) {
-        payload.answer = msg.answer;
+      if (message.answer) {
+        outgoing.answer = message.answer;
       }
 
-      if (msg.candidate) {
-        payload.candidate = msg.candidate;
+      if (message.candidate) {
+        outgoing.candidate = message.candidate;
       }
 
-      if (msg.restart === true) {
-        payload.restart = true;
+      if (message.restart === true) {
+        outgoing.restart = true;
       }
 
-      send(target.ws, payload);
+      console.log(
+        `[SIGNAL] ${message.type} ${client.id} -> ${targetId}`
+      );
+
+      send(target.ws, outgoing);
 
       return;
     }
 
     /*
-     * ==========================================================
+     * =========================================================
      * CHAT
-     * ==========================================================
+     * =========================================================
      */
 
-    if (msg.type === 'chat') {
+    if (message.type === "chat") {
 
-      const text = String(msg.text || '')
+      const text = String(message.text || "")
         .trim()
         .slice(0, 500);
 
-      if (!text) {
-        return;
-      }
+      if (!text) return;
 
-      const message = {
+      const chatMessage = {
         id: client.id,
         name: client.name,
         text,
         time: new Date().toISOString()
       };
 
-      room.chat.push(message);
+      room.chat.push(chatMessage);
 
       if (room.chat.length > 500) {
         room.chat.shift();
       }
 
       for (const member of room.members.values()) {
-
         send(member.ws, {
-          type: 'chat',
-          ...message
+          type: "chat",
+          ...chatMessage
         });
-
       }
 
       return;
     }
-
   });
 
-  /*
-   * ==========================================================
-   * CONNECTION CLOSED
-   * ==========================================================
-   */
-
-  ws.on('close', () => {
+  ws.on("close", () => {
+    console.log(`[CLOSE] ${client.id}`);
     leaveClient(client);
   });
 
-  ws.on('error', () => {
+  ws.on("error", error => {
+    console.error(
+      `[WS ERROR] ${client.id}`,
+      error?.message || error
+    );
+
     leaveClient(client);
   });
-
 });
 
 
 /*
  * ============================================================
- * WEBSOCKET HEARTBEAT
+ * HEARTBEAT
  * ============================================================
  */
 
@@ -411,24 +431,25 @@ const heartbeat = setInterval(() => {
     try {
       ws.ping();
     } catch {}
-
   }
 
 }, 20000);
 
-wss.on('close', () => {
+wss.on("close", () => {
   clearInterval(heartbeat);
 });
 
 
-/*
- * ============================================================
- * START SERVER
- * ============================================================
- */
-
 server.listen(PORT, () => {
   console.log(
     `YSSAMOLA signaling server listening on port ${PORT}`
+  );
+
+  console.log(
+    `Meeting code configured: ${MEETING_CODE ? "YES" : "NO"}`
+  );
+
+  console.log(
+    `Maximum members: ${MAX_MEMBERS}`
   );
 });
