@@ -106,8 +106,8 @@
           <div id="mediaTab" class="tab-panel active">
             <div class="form-card" style="max-width:520px;margin:0 auto">
               <h2 style="font-size:1.3rem;margin-bottom:16px">Media Upload</h2>
-              <div class="field"><input type="file" id="fileInput" accept="image/*,video/*" /></div>
-              <button class="btn btn-primary" style="width:100%" onclick="uploadFile()">Upload</button>
+              <div class="field"><input type="file" id="fileInput" accept="image/*,video/*" multiple /></div>
+              <button class="btn btn-primary" id="uploadButton" style="width:100%" onclick="uploadFile()">Upload Selected Files</button>
               <p id="uploadStatus" class="msg"></p>
             </div>
             <div id="mediaGallery" class="media-gallery"></div>
@@ -221,30 +221,80 @@
       }
     }
 
-    function uploadFile() {
+    // Read and upload one file. The existing Apps Script endpoint accepts one file per request.
+    function readFileAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Could not read " + file.name));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function uploadSingleFile(file) {
+      const dataURL = await readFileAsDataURL(file);
+      const base64Data = dataURL.split(",")[1];
+      const formData = new URLSearchParams();
+      formData.append("fileName", file.name);
+      formData.append("fileData", base64Data);
+      formData.append("mimeType", file.type || "application/octet-stream");
+
+      const response = await fetch(apiURL, { method: "POST", body: formData });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Upload failed");
+      }
+    }
+
+    async function uploadFile() {
       if (currentRole !== "admin") return;
+
       const fileInput = document.getElementById("fileInput");
       const status = document.getElementById("uploadStatus");
+      const uploadButton = document.getElementById("uploadButton");
+      const files = Array.from(fileInput.files);
+
       status.classList.remove("error");
-      if (fileInput.files.length === 0) { status.textContent = "Please select a file."; status.classList.add("error"); return; }
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const base64Data = e.target.result.split(",")[1];
-        const formData = new URLSearchParams();
-        formData.append("fileName", file.name);
-        formData.append("fileData", base64Data);
-        formData.append("mimeType", file.type);
-        status.textContent = "Uploading…";
-        fetch(apiURL, { method: "POST", body: formData })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.success) { status.textContent = "Upload successful!"; fileInput.value = ""; loadMedia(); }
-            else { status.textContent = "Upload failed: " + (data.message || "Unknown error"); status.classList.add("error"); }
-          })
-          .catch((err) => { console.error("[v0] upload error", err); status.textContent = "Error uploading file."; status.classList.add("error"); });
-      };
-      reader.readAsDataURL(file);
+      if (files.length === 0) {
+        status.textContent = "Please select one or more photos/videos.";
+        status.classList.add("error");
+        return;
+      }
+
+      uploadButton.disabled = true;
+      uploadButton.textContent = "Uploading…";
+
+      let uploaded = 0;
+      const failed = [];
+
+      // Upload sequentially to avoid overwhelming the Apps Script endpoint.
+      for (let i = 0; i < files.length; i++) {
+        if (currentRole !== "admin") break;
+
+        const file = files[i];
+        status.textContent = `Uploading ${i + 1} of ${files.length}: ${file.name}`;
+
+        try {
+          await uploadSingleFile(file);
+          uploaded++;
+        } catch (err) {
+          console.error("Upload error for " + file.name, err);
+          failed.push(file.name + " (" + (err.message || "Upload error") + ")");
+        }
+      }
+
+      fileInput.value = "";
+      uploadButton.disabled = false;
+      uploadButton.textContent = "Upload Selected Files";
+
+      if (failed.length === 0) {
+        status.textContent = `Successfully uploaded ${uploaded} file(s).`;
+      } else {
+        status.textContent = `Uploaded ${uploaded} of ${files.length} file(s). Failed: ${failed.join(", ")}`;
+        status.classList.add("error");
+      }
+
+      if (uploaded > 0) loadMedia();
     }
 
     function loadMedia() {
